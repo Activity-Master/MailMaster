@@ -1,9 +1,8 @@
 package com.armineasy.activitymaster.mail;
 
-import com.armineasy.activitymaster.activitymaster.db.entities.arrangement.Arrangement;
-import com.armineasy.activitymaster.activitymaster.db.entities.arrangement.ArrangementXInvolvedParty;
-import com.armineasy.activitymaster.activitymaster.db.entities.involvedparty.InvolvedParty;
+import com.armineasy.activitymaster.activitymaster.services.dto.IArrangement;
 import com.armineasy.activitymaster.activitymaster.services.dto.IEnterprise;
+import com.armineasy.activitymaster.activitymaster.services.dto.IInvolvedParty;
 import com.armineasy.activitymaster.activitymaster.services.dto.ISystems;
 import com.armineasy.activitymaster.activitymaster.services.system.IArrangementsService;
 import com.armineasy.activitymaster.activitymaster.services.system.IInvolvedPartyService;
@@ -12,6 +11,7 @@ import com.armineasy.activitymaster.mail.servers.MailServer;
 import com.armineasy.activitymaster.mail.services.IMailService;
 import com.armineasy.activitymaster.mail.services.classifications.MailSystemClassifications;
 import com.jwebmp.guicedinjection.GuiceContext;
+import com.sun.mail.imap.IMAPFolder;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import lombok.extern.java.Log;
@@ -22,9 +22,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 
-import static com.armineasy.activitymaster.mail.services.classifications.MailSystemClassifications.*;
 import static com.armineasy.activitymaster.mail.services.enumerations.MailImportArrangementTypes.*;
-import static com.armineasy.activitymaster.mail.services.enumerations.MailImportArrangementTypes.MailImport;
 import static com.jwebmp.guicedinjection.GuiceContext.*;
 
 @Data
@@ -43,6 +41,10 @@ public class MailService
 	private Map<String, Integer> folderMessages = new LinkedHashMap<>();
 
 	private boolean loggedIn;
+
+	private long totalMails;
+	private long totalFolders;
+	private long totalSize;
 
 	public MailService()
 	{
@@ -66,11 +68,12 @@ public class MailService
 	}
 
 	@Override
-	public InvolvedParty findByEmail(String emailAddress, ISystems<?> systems, UUID... identityToken)
+	public IInvolvedParty<?> findByEmail(String emailAddress, ISystems<?> systems, UUID... identityToken)
 	{
-		UUID identity = MailSystem.getSystemTokens().get(systems.getEnterpriseID());
-		InvolvedParty involvedPartyService = get(IInvolvedPartyService.class)
-				                                     .findByIdentificationType(IdentificationTypes.IdentificationTypeEmailAddress, emailAddress, systems, identity);
+		UUID identity = MailSystem.getSystemTokens()
+		                          .get(systems.getEnterpriseID());
+		IInvolvedParty<?> involvedPartyService = get(IInvolvedPartyService.class)
+				                                         .findByIdentificationType(IdentificationTypes.IdentificationTypeEmailAddress, emailAddress, systems, identity);
 
 		return involvedPartyService;
 	}
@@ -79,6 +82,13 @@ public class MailService
 	public ISystems<?> getMailSystem(IEnterprise<?> enterprise)
 	{
 		return MailSystem.getNewSystem()
+		                 .get(enterprise);
+	}
+
+	@Override
+	public UUID getMailUUID(IEnterprise<?> enterprise)
+	{
+		return MailSystem.getSystemTokens()
 		                 .get(enterprise);
 	}
 
@@ -93,12 +103,16 @@ public class MailService
 		properties.put("mail.imap.timeout", 10);
 		properties.put("mail.imap.starttls.enable", true);
 
-		session = Session.getDefaultInstance(properties, new PasswordAuthenticator());
+		session = Session.getDefaultInstance(properties, null);
 		try
 		{
 			store = session.getStore("imaps");
 			store.connect(server.getHostname(), server.getUsername(), server.getPassword());
 			loggedIn = true;
+		}
+		catch (AuthenticationFailedException afe)
+		{
+			throw new RuntimeException("Can't Connect",afe);
 		}
 		catch (NoSuchProviderException e)
 		{
@@ -112,18 +126,19 @@ public class MailService
 	}
 
 	@Override
-	public ArrangementXInvolvedParty createArrangement(InvolvedParty ip, String value, UUID...identityToken)
+	public IArrangement<?> createArrangement(IInvolvedParty<?> ip, String value, UUID... identityToken)
 	{
-		UUID identity = MailSystem.getSystemTokens().get(ip.getEnterpriseID());
-		ISystems system = MailSystem.getNewSystem().get(ip.getEnterpriseID());
+		UUID identity = MailSystem.getSystemTokens()
+		                          .get(ip.getEnterpriseID());
+		ISystems system = MailSystem.getNewSystem()
+		                            .get(ip.getEnterpriseID());
 
 		IArrangementsService<?> arrangementsService = GuiceContext.get(IArrangementsService.class);
+		IArrangement<?> a = arrangementsService.create(MailImport, value, system, identityToken);
 
-		Arrangement a = arrangementsService.create(MailImport, value, system, identityToken);
-		ArrangementXInvolvedParty axip = a.add(ip, MailSystemClassifications.MailImport, system, identity);
-		axip.setValue(value);
+		a.add(ip, MailSystemClassifications.MailImport, value, system, identity);
 
-		return axip;
+		return a;
 	}
 
 	@Override
@@ -155,9 +170,11 @@ public class MailService
 		return totalMails;
 	}
 
+	boolean gotMyQuota = false;
+
 	private Folder goThroughFolders(String prefix, Folder fd) throws MessagingException
 	{
-
+		Quota[] quotas = null;
 		for (Folder folder : fd.list())
 		{
 			try
@@ -172,6 +189,32 @@ public class MailService
 				continue;
 			}
 			folderMessages.put(folder.getFullName(), folder.getMessageCount());
+			totalFolders += 1;
+			totalMails += folder.getMessageCount();
+			if (!gotMyQuota)
+			{
+				IMAPFolder imf = (IMAPFolder) folder;
+				if(quotas == null)
+					try
+					{
+						quotas = imf.getQuota();
+
+						for (Quota quota : quotas)
+						{
+							System.out.println(String.format("quotaRoot:'%s'", quota.quotaRoot));
+							for (Quota.Resource resource : quota.resources)
+							{
+								System.out.println(String.format("name:'%s', limit:'%s', usage:'%s'",
+								                                 resource.name, resource.limit, resource.usage));
+								totalSize = resource.usage * 1024;
+								gotMyQuota = true;
+							}
+						}
+					}catch(Exception e)
+					{
+						log.log(Level.WARNING, "Cannot Get Quota for " + imf.getFullName(), e);
+					}
+			}
 			goThroughFolders(prefix + folder.getName() + "/", folder);
 			folder.close(true);
 		}

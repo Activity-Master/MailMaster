@@ -19,6 +19,7 @@ module com.armineasy.activitymaster.mail {
 	requires com.jwebmp.guicedinjection;
 	requires com.google.common;
 	requires javax.servlet.api;
+	requires com.fasterxml.jackson.annotation;
 
 	provides com.armineasy.activitymaster.activitymaster.services.IActivityMasterSystem with com.armineasy.activitymaster.mail.MailSystem;
 	provides com.jwebmp.guicedinjection.interfaces.IGuiceModule with com.armineasy.activitymaster.mail.implementations.MailMasterBinder;
@@ -28,5 +29,11 @@ module com.armineasy.activitymaster.mail {
 	exports com.armineasy.activitymaster.mail.services;
 	exports com.armineasy.activitymaster.mail.services.enumerations;
 	exports com.armineasy.activitymaster.mail;
+	exports com.armineasy.activitymaster.mail.services.classifications;
+	exports com.armineasy.activitymaster.mail.services.dto;
+
+	opens com.armineasy.activitymaster.mail.services.dto to com.fasterxml.jackson.databind;
+	exports com.armineasy.activitymaster.mail.importer;
+	exports com.armineasy.activitymaster.mail.threads;
 
 }

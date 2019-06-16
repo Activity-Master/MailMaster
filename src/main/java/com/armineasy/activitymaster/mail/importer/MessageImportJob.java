@@ -1,12 +1,14 @@
 package com.armineasy.activitymaster.mail.importer;
 
 import com.armineasy.activitymaster.mail.MailService;
+import lombok.Data;
 
 import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.UIDFolder;
 
+@Data
 public class MessageImportJob
 		implements Runnable
 {
@@ -16,13 +18,15 @@ public class MessageImportJob
 	private final String a;
 	private final Integer b;
 
-	public MessageImportJob(MailService source, MailService dest, String prefix, String a, Integer b)
+
+
+	public MessageImportJob(MailService source, MailService dest, String prefix, String folderA, Integer folderB)
 	{
 		this.source = source;
 		this.dest = dest;
 		this.prefix = prefix;
-		this.a = a;
-		this.b = b;
+		this.a = folderA;
+		this.b = folderB;
 	}
 
 	@Override

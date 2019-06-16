@@ -25,6 +25,13 @@
             </exclusions>
         </dependency>
 -->
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>com.sun.mail</groupId>
             <artifactId>javax.mail</artifactId>
@@ -35,6 +42,7 @@
             <artifactId>activity-master</artifactId>
             <version>${project.version}</version>
         </dependency>
+<!--
 
         <dependency>
             <groupId>com.armineasy.activitymaster</groupId>
@@ -43,6 +51,7 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
+-->
 
         <dependency>
             <groupId>com.jwebmp.thirdparty</groupId>

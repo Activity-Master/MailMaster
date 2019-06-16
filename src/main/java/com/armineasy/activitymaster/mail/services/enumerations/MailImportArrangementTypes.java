@@ -1,10 +1,10 @@
 package com.armineasy.activitymaster.mail.services.enumerations;
 
-import com.armineasy.activitymaster.activitymaster.services.IArrangementType;
-import com.armineasy.activitymaster.activitymaster.services.IClassificationDataConceptValue;
+import com.armineasy.activitymaster.activitymaster.services.enumtypes.IArrangementTypes;
+import com.armineasy.activitymaster.activitymaster.services.enumtypes.IClassificationDataConceptValue;
 import com.armineasy.activitymaster.activitymaster.services.concepts.EnterpriseClassificationDataConcepts;
 
-public enum MailImportArrangementTypes implements IArrangementType<MailImportArrangementTypes>
+public enum MailImportArrangementTypes implements IArrangementTypes<MailImportArrangementTypes>
 {
 	MailImport("MailImport", EnterpriseClassificationDataConcepts.GlobalClassificationsDataConceptName)
 	;

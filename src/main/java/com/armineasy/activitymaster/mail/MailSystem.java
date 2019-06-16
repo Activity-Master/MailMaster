@@ -14,14 +14,16 @@ import com.armineasy.activitymaster.mail.services.enumerations.MailImportArrange
 import com.armineasy.activitymaster.mail.services.enumerations.MailImportStage;
 import com.google.inject.Singleton;
 import com.jwebmp.guicedinjection.GuiceContext;
+import com.jwebmp.guicedinjection.interfaces.JobService;
+import com.jwebmp.logger.LogFactory;
 import lombok.Getter;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static com.armineasy.activitymaster.mail.services.classifications.MailSystemClassifications.*;
-import static com.armineasy.activitymaster.mail.services.enumerations.MailImportArrangementTypes.*;
 
 @Singleton
 public class MailSystem
@@ -34,6 +36,7 @@ public class MailSystem
 
 	private UUID uuid;
 
+	@SuppressWarnings("Duplicates")
 	private void createClassifications(IEnterprise<?> enterprise)
 	{
 		ClassificationService classificationService = GuiceContext.get(ClassificationService.class);
@@ -41,20 +44,39 @@ public class MailSystem
 		                                            .getActivityMaster(enterprise);
 
 		IArrangementsService<?> arrangementsService = GuiceContext.get(IArrangementsService.class);
-		arrangementsService.createArrangementType(MailImportArrangementTypes.MailImport, newSystem.get(enterprise), uuid);
 
 		classificationService.create(MailSystemClassifications.MailImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
-		classificationService.create(GoogleUserNameKey, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
+		classificationService.create(MailImportFor, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem, MailSystem.getSystemTokens().get(enterprise));
+		classificationService.create(TargetUserNameKey, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem, MailSystem.getSystemTokens().get(enterprise));
+		classificationService.create(TargetPassKey, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem, MailSystem.getSystemTokens().get(enterprise));
+		classificationService.create(SourceUserNameKey, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem, MailSystem.getSystemTokens().get(enterprise));
+		classificationService.create(SourcePassKey, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem, MailSystem.getSystemTokens().get(enterprise));
 		classificationService.create(FoldersForImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
-		classificationService.create(CurrentDayOfImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
-		classificationService.create(CurrentSizeOfImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
+		//classificationService.create(CurrentDayOfImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
+		classificationService.create(LastDayOfImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
+		//classificationService.create(CurrentSizeOfImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
 		classificationService.create(ConfirmedSourceMailImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
 		classificationService.create(ConfirmedDestinationMailImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
+
+		classificationService.create(CurrentDayOfImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
+		//classificationService.create(CurrentSizeOfImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
+		classificationService.create(CurrentDaySizeOfImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
+		classificationService.create(TotalCountOfMailImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
+		classificationService.create(CompletedMailImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem, MailSystem.getSystemTokens().get(enterprise));
+		classificationService.create(CompletedFolderImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem, MailSystem.getSystemTokens().get(enterprise));
+		classificationService.create(CompletedSizeImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem, MailSystem.getSystemTokens().get(enterprise));
+		classificationService.create(TotalFoldersForMailImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
+		classificationService.create(TotalSizeForMailImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
+
+		classificationService.create(JobStartedForMailImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
+		classificationService.create(JobPausedForMailImport, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
 
 		classificationService.create(MailImportStage.MailImportCompleted, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
 		classificationService.create(MailImportStage.MailImportInProgress, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
 		classificationService.create(MailImportStage.MailImportLoginError, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
 		classificationService.create(MailImportStage.MailImportNotStarted, newSystem.get(enterprise), uuid).createDefaultSecurity(activityMasterSystem,MailSystem.getSystemTokens().get(enterprise));
+
+		arrangementsService.createArrangementType(MailImportArrangementTypes.MailImport, newSystem.get(enterprise), uuid);
 	}
 
 	@Override
@@ -75,8 +97,12 @@ public class MailSystem
 		newSystem.put(enterprise, GuiceContext.get(SystemsService.class)
 		                                      .create(enterprise, "Mail System",
 		                                              "The system for managing User Profiles", ""));
-		UUID uuid = GuiceContext.get(SystemsSystem.class)
+		uuid = GuiceContext.get(SystemsSystem.class)
 		                        .registerNewSystem(enterprise, newSystem.get(enterprise));
+
+		LogFactory.getLog("MailSystem").warning("Waiting for all systems to generate their security identities");
+		JobService.getInstance().waitForJob("SecurityTokenStore", 5L, TimeUnit.MINUTES);
+
 		systemTokens.put(enterprise, uuid);
 		createClassifications(enterprise);
 	}
