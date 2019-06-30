@@ -1,25 +1,28 @@
 package com.armineasy.activitymaster.mail.services.enumerations;
 
+import com.armineasy.activitymaster.activitymaster.services.concepts.EnterpriseClassificationDataConcepts;
 import com.armineasy.activitymaster.activitymaster.services.enumtypes.IArrangementTypes;
 import com.armineasy.activitymaster.activitymaster.services.enumtypes.IClassificationDataConceptValue;
-import com.armineasy.activitymaster.activitymaster.services.concepts.EnterpriseClassificationDataConcepts;
 
 import static com.armineasy.activitymaster.activitymaster.services.concepts.EnterpriseClassificationDataConcepts.*;
 
-public enum MailImportArrangementTypes implements IArrangementTypes<MailImportArrangementTypes>
+public enum MailImportResourceItemTypes
+		implements IArrangementTypes<MailImportResourceItemTypes>
 {
-	MailImport("MailImport", GlobalClassificationsDataConceptName)
+	FolderStatusResourceItem("FolderStatusResourceItem", GlobalClassificationsDataConceptName)
+
+
 	;
 	private String classificationValue;
 	private IClassificationDataConceptValue<?> dataConceptValue;
 
-	MailImportArrangementTypes(String classificationValue, IClassificationDataConceptValue<?> dataConceptValue)
+	MailImportResourceItemTypes(String classificationValue, IClassificationDataConceptValue<?> dataConceptValue)
 	{
 		this.classificationValue = classificationValue;
 		this.dataConceptValue = dataConceptValue;
 	}
 
-	MailImportArrangementTypes(String classificationValue)
+	MailImportResourceItemTypes(String classificationValue)
 	{
 		this.classificationValue = classificationValue;
 	}

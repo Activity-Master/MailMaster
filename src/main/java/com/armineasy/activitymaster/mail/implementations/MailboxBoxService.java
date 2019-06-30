@@ -1,36 +1,35 @@
-package com.armineasy.activitymaster.mail;
+package com.armineasy.activitymaster.mail.implementations;
 
 import com.armineasy.activitymaster.activitymaster.services.dto.IArrangement;
 import com.armineasy.activitymaster.activitymaster.services.dto.IEnterprise;
 import com.armineasy.activitymaster.activitymaster.services.dto.IInvolvedParty;
 import com.armineasy.activitymaster.activitymaster.services.dto.ISystems;
+import com.armineasy.activitymaster.activitymaster.services.security.Passwords;
 import com.armineasy.activitymaster.activitymaster.services.system.IArrangementsService;
 import com.armineasy.activitymaster.activitymaster.services.system.IInvolvedPartyService;
 import com.armineasy.activitymaster.activitymaster.services.types.IdentificationTypes;
+import com.armineasy.activitymaster.mail.MailSystem;
 import com.armineasy.activitymaster.mail.servers.MailServer;
-import com.armineasy.activitymaster.mail.services.IMailService;
+import com.armineasy.activitymaster.mail.services.IMailBoxService;
 import com.armineasy.activitymaster.mail.services.classifications.MailSystemClassifications;
 import com.jwebmp.guicedinjection.GuiceContext;
 import com.sun.mail.imap.IMAPFolder;
-import lombok.Data;
 import lombok.experimental.Accessors;
-import lombok.extern.java.Log;
 
 import javax.mail.*;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.armineasy.activitymaster.mail.services.enumerations.MailImportArrangementTypes.*;
-import static com.jwebmp.guicedinjection.GuiceContext.*;
 
-@Data
 @Accessors(chain = true)
-@Log
-public class MailService
-		implements IMailService<MailService>, Closeable
+public class MailboxBoxService
+		implements IMailBoxService<MailboxBoxService>, Closeable
 {
+	private static final Logger log = Logger.getLogger(MailboxBoxService.class.getName());
 	private MailServer server;
 
 	private Session session;
@@ -46,11 +45,11 @@ public class MailService
 	private long totalFolders;
 	private long totalSize;
 
-	public MailService()
+	public MailboxBoxService()
 	{
 	}
 
-	public MailService(MailServer server)
+	public MailboxBoxService(MailServer server)
 	{
 		this.server = server;
 		properties = new Properties();
@@ -61,7 +60,7 @@ public class MailService
 		return server;
 	}
 
-	public MailService setServer(MailServer server)
+	public MailboxBoxService setServer(MailServer server)
 	{
 		this.server = server;
 		return this;
@@ -72,8 +71,10 @@ public class MailService
 	{
 		UUID identity = MailSystem.getSystemTokens()
 		                          .get(systems.getEnterpriseID());
-		IInvolvedParty<?> involvedPartyService = get(IInvolvedPartyService.class)
-				                                         .findByIdentificationType(IdentificationTypes.IdentificationTypeEmailAddress, emailAddress, systems, identity);
+		IInvolvedParty<?> involvedPartyService = GuiceContext.get(IInvolvedPartyService.class)
+		                                                     .findByIdentificationType(IdentificationTypes.IdentificationTypeEmailAddress,
+		                                                                               Passwords.integerEncrypt(emailAddress.getBytes())
+				                                                     , systems, identity);
 
 		return involvedPartyService;
 	}
@@ -93,7 +94,7 @@ public class MailService
 	}
 
 	@Override
-	public MailService login()
+	public MailboxBoxService login()
 	{
 		properties.put("mail.transport.protocol", "imap");
 		properties.put("mail.imap.port", server.getPort());
@@ -112,7 +113,7 @@ public class MailService
 		}
 		catch (AuthenticationFailedException afe)
 		{
-			throw new RuntimeException("Can't Connect",afe);
+			throw new RuntimeException("Can't Connect", afe);
 		}
 		catch (NoSuchProviderException e)
 		{
@@ -135,31 +136,34 @@ public class MailService
 
 		IArrangementsService<?> arrangementsService = GuiceContext.get(IArrangementsService.class);
 		IArrangement<?> a = arrangementsService.create(MailImport, value, system, identityToken);
-
 		a.add(ip, MailSystemClassifications.MailImport, value, system, identity);
 
 		return a;
 	}
 
 	@Override
-	public MailService loadFolders() throws MessagingException
+	public MailboxBoxService loadFolders() throws MessagingException
 	{
 		if (!loggedIn)
 		{
 			login();
 		}
 		folderMessages.clear();
-		goThroughFolders("", store.getDefaultFolder());
+		try
+		{
+			goThroughFolders("", store.getDefaultFolder());
+		}
+		catch (Throwable T)
+		{
+			log.log(Level.SEVERE, "OIOOOOPPS", T);
+		}
+		totalMails = getNumberOfMails();
 		return this;
 	}
 
 	@Override
 	public long getNumberOfMails() throws MessagingException
 	{
-		if (!loggedIn)
-		{
-			login();
-		}
 		Integer totalMails = 0;
 		for (Map.Entry<String, Integer> entry : folderMessages.entrySet())
 		{
@@ -171,56 +175,102 @@ public class MailService
 	}
 
 	boolean gotMyQuota = false;
+	boolean isGmail = false;
 
 	private Folder goThroughFolders(String prefix, Folder fd) throws MessagingException
 	{
-		Quota[] quotas = null;
-		for (Folder folder : fd.list())
+		try
+		{
+			if (!fd.isOpen())
+			{
+				fd.open(Folder.READ_WRITE);
+			}
+		}
+		catch (MessagingException me)
+		{
+			for (Folder folder : fd.list("*"))
+			{
+				goThroughFolders(prefix + folder.getName() + "/", folder);
+				try
+				{
+					folder.close();
+				}
+				catch (Exception me2)
+				{
+					//Expected
+				}
+			}
+			return fd;
+		}
+		if (!fd.isOpen())
+		{
+			fd.open(Folder.READ_WRITE);
+		}
+		IMAPFolder imf = (IMAPFolder) fd;
+		int type = fd.getType();
+		String[] attrs = imf.getAttributes();
+		List<String> attrList = Arrays.asList(attrs);
+		if (attrList.contains("\\All") ||
+		    attrList.contains("\\Important") ||
+		    attrList.contains("\\Starred")
+		)
 		{
 			try
 			{
-				if (!folder.isOpen())
+				fd.close();
+			}
+			catch (Exception e)
+			{
+				//in case
+			}
+			return fd;
+		}
+
+		String fullPathName = prefix + fd.getFullName();
+		if (!isGmail && fullPathName.contains("[Gmail]"))
+		{
+			isGmail = true;
+		}
+
+		String folderName = fd.getFullName();
+		folderMessages.put(folderName, fd.getMessageCount());
+		totalFolders += 1;
+		Quota[] quotas = null;
+		if (!gotMyQuota)
+		{
+			if (quotas == null)
+			{
+				try
 				{
-					folder.open(Folder.READ_ONLY);
+					quotas = imf.getQuota();
+
+					for (Quota quota : quotas)
+					{
+						System.out.println(String.format("quotaRoot:'%s'", quota.quotaRoot));
+						for (Quota.Resource resource : quota.resources)
+						{
+							System.out.println(String.format("name:'%s', limit:'%s', usage:'%s'",
+							                                 resource.name, resource.limit, resource.usage));
+							totalSize = resource.usage * 1024;
+							gotMyQuota = true;
+						}
+					}
+				}
+				catch (Exception e)
+				{
+					log.log(Level.WARNING, "Cannot Get Quota for " + imf.getFullName());
 				}
 			}
-			catch (MessagingException me)
-			{
-				continue;
-			}
-			folderMessages.put(folder.getFullName(), folder.getMessageCount());
-			totalFolders += 1;
-			totalMails += folder.getMessageCount();
-			if (!gotMyQuota)
-			{
-				IMAPFolder imf = (IMAPFolder) folder;
-				if(quotas == null)
-					try
-					{
-						quotas = imf.getQuota();
-
-						for (Quota quota : quotas)
-						{
-							System.out.println(String.format("quotaRoot:'%s'", quota.quotaRoot));
-							for (Quota.Resource resource : quota.resources)
-							{
-								System.out.println(String.format("name:'%s', limit:'%s', usage:'%s'",
-								                                 resource.name, resource.limit, resource.usage));
-								totalSize = resource.usage * 1024;
-								gotMyQuota = true;
-							}
-						}
-					}catch(Exception e)
-					{
-						log.log(Level.WARNING, "Cannot Get Quota for " + imf.getFullName(), e);
-					}
-			}
+		}
+		for (Folder folder : fd.list("*"))
+		{
 			goThroughFolders(prefix + folder.getName() + "/", folder);
-			folder.close(true);
+			folder.close();
 		}
 		return fd;
 	}
 
+	@Override
 	public List<Folder> getFolders(String folderPath) throws MessagingException
 	{
 		List<Folder> fold = new ArrayList<>();
@@ -271,17 +321,24 @@ public class MailService
 		{
 			newFolder.create(Folder.HOLDS_MESSAGES);
 		}
-		if (!newFolder.isOpen())
+		try
 		{
-			newFolder.open(Folder.READ_WRITE);
+			if (!newFolder.isOpen())
+			{
+				newFolder.open(Folder.READ_WRITE);
+			}
+			if (!f.isOpen())
+			{
+				f.open(Folder.READ_WRITE);
+			}
+			folderMessages.put(newFolder.getFullName(), 0);
+			f.close(true);
+			newFolder.close(true);
 		}
-		if (!f.isOpen())
+		catch (FolderNotFoundException nfe)
 		{
-			f.open(Folder.READ_WRITE);
+			log.log(Level.WARNING, "Folder not found : " + f.getFullName(), nfe);
 		}
-		folderMessages.put(newFolder.getFullName(), 0);
-		f.close(true);
-		newFolder.close(true);
 		return newFolder;
 	}
 
@@ -302,6 +359,100 @@ public class MailService
 	public Map<String, Integer> getFolderMessages()
 	{
 		return folderMessages;
+	}
+
+	public Session getSession()
+	{
+		return this.session;
+	}
+
+	public Properties getProperties()
+	{
+		return this.properties;
+	}
+
+	public Store getStore()
+	{
+		return this.store;
+	}
+
+	public boolean isLoggedIn()
+	{
+		return this.loggedIn;
+	}
+
+	public long getTotalMails()
+	{
+		return this.totalMails;
+	}
+
+	public long getTotalFolders()
+	{
+		return this.totalFolders;
+	}
+
+	public long getTotalSize()
+	{
+		return this.totalSize;
+	}
+
+	public boolean isGotMyQuota()
+	{
+		return this.gotMyQuota;
+	}
+
+	public MailboxBoxService setSession(Session session)
+	{
+		this.session = session;
+		return this;
+	}
+
+	public MailboxBoxService setProperties(Properties properties)
+	{
+		this.properties = properties;
+		return this;
+	}
+
+	public MailboxBoxService setStore(Store store)
+	{
+		this.store = store;
+		return this;
+	}
+
+	public MailboxBoxService setFolderMessages(Map<String, Integer> folderMessages)
+	{
+		this.folderMessages = folderMessages;
+		return this;
+	}
+
+	public MailboxBoxService setLoggedIn(boolean loggedIn)
+	{
+		this.loggedIn = loggedIn;
+		return this;
+	}
+
+	public MailboxBoxService setTotalMails(long totalMails)
+	{
+		this.totalMails = totalMails;
+		return this;
+	}
+
+	public MailboxBoxService setTotalFolders(long totalFolders)
+	{
+		this.totalFolders = totalFolders;
+		return this;
+	}
+
+	public MailboxBoxService setTotalSize(long totalSize)
+	{
+		this.totalSize = totalSize;
+		return this;
+	}
+
+	public MailboxBoxService setGotMyQuota(boolean gotMyQuota)
+	{
+		this.gotMyQuota = gotMyQuota;
+		return this;
 	}
 
 	private class PasswordAuthenticator

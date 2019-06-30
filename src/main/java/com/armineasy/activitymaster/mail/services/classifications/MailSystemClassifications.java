@@ -35,6 +35,7 @@ public enum MailSystemClassifications
 
 	TotalCountOfMailImport("Total count of mails for mail import", ArrangementXClassification),
 	CompletedMailImport("Total count of mails completed for mail import", ArrangementXClassification),
+	CurrentFolderImport("The current folder for the import", ArrangementXClassification),
 	CompletedFolderImport("Total count of mails completed for mail import", ArrangementXClassification),
 	CompletedSizeImport("Total count of mails completed for mail import", ArrangementXClassification),
 

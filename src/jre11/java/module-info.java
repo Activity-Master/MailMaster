@@ -2,6 +2,8 @@ module com.armineasy.activitymaster.mail {
 
 	requires java.mail;
 
+	requires com.armineasy.activitymaster.profiles;
+
 	requires lombok;
 	requires org.mapstruct;
 	requires net.sf.uadetector.core;
@@ -12,6 +14,8 @@ module com.armineasy.activitymaster.mail {
 	requires cache.annotations.ri.common;
 	requires cache.annotations.ri.guice;
 	requires cache.api;
+
+	requires java.sql;
 
 	requires com.armineasy.activitymaster.activitymaster;
 	requires com.google.guice;
@@ -33,7 +37,9 @@ module com.armineasy.activitymaster.mail {
 	exports com.armineasy.activitymaster.mail.services.dto;
 
 	opens com.armineasy.activitymaster.mail.services.dto to com.fasterxml.jackson.databind;
+	opens com.armineasy.activitymaster.mail.implementations to com.fasterxml.jackson.databind,com.google.guice;
 	exports com.armineasy.activitymaster.mail.importer;
 	exports com.armineasy.activitymaster.mail.threads;
+	exports com.armineasy.activitymaster.mail.roles;
 
 }

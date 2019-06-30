@@ -7,7 +7,7 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class MailServiceTest
+class MailboxServiceTest
 {
 	@Test
 	void testMe() throws MessagingException

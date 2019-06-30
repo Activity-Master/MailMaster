@@ -1,6 +1,6 @@
 package com.armineasy.activitymaster.mail.services.dto;
 
-import com.armineasy.activitymaster.mail.MailService;
+import com.armineasy.activitymaster.mail.implementations.MailboxBoxService;
 import com.armineasy.activitymaster.mail.servers.GMailMailServer;
 import com.armineasy.activitymaster.mail.servers.SaNrgMailServer;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -11,6 +11,7 @@ import lombok.experimental.Accessors;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
+import java.util.Objects;
 
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.*;
 
@@ -45,13 +46,15 @@ public class MailImportTicket
 	private long completedFolders;
 	private long completedSize;
 
+	private String currentFolder;
+
 	public MailImportTicket()
 	{
 	}
 
 	public boolean verifySaNrgLogin()
 	{
-		try(MailService ms = new MailService(new SaNrgMailServer(sanrgMailAddress,sanrgMailPassword)))
+		try(MailboxBoxService ms = new MailboxBoxService(new SaNrgMailServer(sanrgMailAddress, sanrgMailPassword)))
 		{
 			ms.login();
 		}
@@ -66,7 +69,7 @@ public class MailImportTicket
 
 	public boolean verifyGoogleLogin()
 	{
-		try(MailService ms = new MailService(new GMailMailServer(gmailAddress, gmailPassword)))
+		try(MailboxBoxService ms = new MailboxBoxService(new GMailMailServer(gmailAddress, gmailPassword)))
 		{
 			ms.login();
 		}
@@ -81,7 +84,7 @@ public class MailImportTicket
 
 	public void loadAllFields()
 	{
-		try(MailService ms = new MailService(new GMailMailServer(gmailAddress, gmailPassword)))
+		try(MailboxBoxService ms = new MailboxBoxService(new GMailMailServer(gmailAddress, gmailPassword)))
 		{
 			ms.login();
 			ms.loadFolders();
@@ -298,136 +301,36 @@ public class MailImportTicket
 		return this;
 	}
 
-	public boolean equals(final Object o)
+	public String getCurrentFolder()
 	{
-		if (o == this)
+		return currentFolder;
+	}
+
+	public MailImportTicket setCurrentFolder(String currentFolder)
+	{
+		this.currentFolder = currentFolder;
+		return this;
+	}
+
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o)
 		{
 			return true;
 		}
-		if (!(o instanceof MailImportTicket))
+		if (o == null || getClass() != o.getClass())
 		{
 			return false;
 		}
-		final MailImportTicket other = (MailImportTicket) o;
-		if (!other.canEqual((Object) this))
-		{
-			return false;
-		}
-		final Object this$sanrgMailAddress = this.getSanrgMailAddress();
-		final Object other$sanrgMailAddress = other.getSanrgMailAddress();
-		if (this$sanrgMailAddress == null ? other$sanrgMailAddress != null : !this$sanrgMailAddress.equals(other$sanrgMailAddress))
-		{
-			return false;
-		}
-		final Object this$sanrgMailPassword = this.getSanrgMailPassword();
-		final Object other$sanrgMailPassword = other.getSanrgMailPassword();
-		if (this$sanrgMailPassword == null ? other$sanrgMailPassword != null : !this$sanrgMailPassword.equals(other$sanrgMailPassword))
-		{
-			return false;
-		}
-		final Object this$gmailAddress = this.getGmailAddress();
-		final Object other$gmailAddress = other.getGmailAddress();
-		if (this$gmailAddress == null ? other$gmailAddress != null : !this$gmailAddress.equals(other$gmailAddress))
-		{
-			return false;
-		}
-		final Object this$gmailPassword = this.getGmailPassword();
-		final Object other$gmailPassword = other.getGmailPassword();
-		if (this$gmailPassword == null ? other$gmailPassword != null : !this$gmailPassword.equals(other$gmailPassword))
-		{
-			return false;
-		}
-		if (this.isStarted() != other.isStarted())
-		{
-			return false;
-		}
-		if (this.isPaused() != other.isPaused())
-		{
-			return false;
-		}
-		if (this.isSanrgChecked() != other.isSanrgChecked())
-		{
-			return false;
-		}
-		if (this.isGmailChecked() != other.isGmailChecked())
-		{
-			return false;
-		}
-		if (this.getTotalMails() != other.getTotalMails())
-		{
-			return false;
-		}
-		if (this.getTotalFolders() != other.getTotalFolders())
-		{
-			return false;
-		}
-		if (this.getTotalSize() != other.getTotalSize())
-		{
-			return false;
-		}
-		if (this.getTotalSizeForToday() != other.getTotalSizeForToday())
-		{
-			return false;
-		}
-		if (this.getCompletedMails() != other.getCompletedMails())
-		{
-			return false;
-		}
-		if (this.getCompletedFolders() != other.getCompletedFolders())
-		{
-			return false;
-		}
-		if (this.getCompletedSize() != other.getCompletedSize())
-		{
-			return false;
-		}
-		return true;
+		MailImportTicket that = (MailImportTicket) o;
+		return Objects.equals(getSanrgMailAddress(), that.getSanrgMailAddress()) &&
+		       Objects.equals(getGmailAddress(), that.getGmailAddress());
 	}
 
-	protected boolean canEqual(final Object other)
-	{
-		return other instanceof MailImportTicket;
-	}
-
+	@Override
 	public int hashCode()
 	{
-		final int PRIME = 59;
-		int result = 1;
-		final Object $sanrgMailAddress = this.getSanrgMailAddress();
-		result = result * PRIME + ($sanrgMailAddress == null ? 43 : $sanrgMailAddress.hashCode());
-		final Object $sanrgMailPassword = this.getSanrgMailPassword();
-		result = result * PRIME + ($sanrgMailPassword == null ? 43 : $sanrgMailPassword.hashCode());
-		final Object $gmailAddress = this.getGmailAddress();
-		result = result * PRIME + ($gmailAddress == null ? 43 : $gmailAddress.hashCode());
-		final Object $gmailPassword = this.getGmailPassword();
-		result = result * PRIME + ($gmailPassword == null ? 43 : $gmailPassword.hashCode());
-		result = result * PRIME + (this.isStarted() ? 79 : 97);
-		result = result * PRIME + (this.isPaused() ? 79 : 97);
-		result = result * PRIME + (this.isSanrgChecked() ? 79 : 97);
-		result = result * PRIME + (this.isGmailChecked() ? 79 : 97);
-		final long $totalMails = this.getTotalMails();
-		result = result * PRIME + (int) ($totalMails >>> 32 ^ $totalMails);
-		final long $totalFolders = this.getTotalFolders();
-		result = result * PRIME + (int) ($totalFolders >>> 32 ^ $totalFolders);
-		final long $totalSize = this.getTotalSize();
-		result = result * PRIME + (int) ($totalSize >>> 32 ^ $totalSize);
-		final long $totalSizeForToday = this.getTotalSizeForToday();
-		result = result * PRIME + (int) ($totalSizeForToday >>> 32 ^ $totalSizeForToday);
-		final long $completedMails = this.getCompletedMails();
-		result = result * PRIME + (int) ($completedMails >>> 32 ^ $completedMails);
-		final long $completedFolders = this.getCompletedFolders();
-		result = result * PRIME + (int) ($completedFolders >>> 32 ^ $completedFolders);
-		final long $completedSize = this.getCompletedSize();
-		result = result * PRIME + (int) ($completedSize >>> 32 ^ $completedSize);
-		return result;
-	}
-
-	public String toString()
-	{
-		return "MailImportTicket(sanrgMailAddress=" + this.getSanrgMailAddress() + ", sanrgMailPassword=" + this.getSanrgMailPassword() + ", gmailAddress=" +
-		       this.getGmailAddress() + ", gmailPassword=" + this.getGmailPassword() + ", started=" + this.isStarted() + ", paused=" + this.isPaused() + ", sanrgChecked=" +
-		       this.isSanrgChecked() + ", gmailChecked=" + this.isGmailChecked() + ", totalMails=" + this.getTotalMails() + ", totalFolders=" + this.getTotalFolders() +
-		       ", totalSize=" + this.getTotalSize() + ", totalSizeForToday=" + this.getTotalSizeForToday() + ", completedMails=" + this.getCompletedMails() +
-		       ", completedFolders=" + this.getCompletedFolders() + ", completedSize=" + this.getCompletedSize() + ")";
+		return Objects.hash(getSanrgMailAddress(), getGmailAddress());
 	}
 }

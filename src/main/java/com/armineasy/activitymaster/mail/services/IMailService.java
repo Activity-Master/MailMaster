@@ -1,30 +1,17 @@
 package com.armineasy.activitymaster.mail.services;
 
-import com.armineasy.activitymaster.activitymaster.db.entities.involvedparty.InvolvedParty;
-import com.armineasy.activitymaster.activitymaster.services.dto.IArrangement;
+import com.armineasy.activitymaster.activitymaster.services.classifications.enterprise.IEnterpriseName;
 import com.armineasy.activitymaster.activitymaster.services.dto.IEnterprise;
 import com.armineasy.activitymaster.activitymaster.services.dto.IInvolvedParty;
-import com.armineasy.activitymaster.activitymaster.services.dto.ISystems;
-import com.armineasy.activitymaster.mail.MailService;
+import com.armineasy.activitymaster.profiles.dto.ProfileServiceDTO;
+import com.armineasy.activitymaster.profiles.dto.UserLoginDTO;
+import com.armineasy.activitymaster.profiles.exceptions.ProfileServiceException;
 
-import javax.mail.Folder;
-import javax.mail.MessagingException;
 import java.util.UUID;
 
 public interface IMailService<J extends IMailService<J>>
 {
-	IInvolvedParty<?> findByEmail(String emailAddress, ISystems<?> systems, UUID... identityToken);
+	IInvolvedParty<?> findByEmail(String email, IEnterprise<?> enterprise, UUID... token);
 
-	ISystems<?> getMailSystem(IEnterprise<?> enterprise);
-	UUID getMailUUID(IEnterprise<?> enterprise);
-
-	MailService login();
-
-	IArrangement<?> createArrangement(IInvolvedParty<?> ip, String value, UUID... identityToken);
-
-	MailService loadFolders() throws MessagingException;
-
-	long getNumberOfMails() throws MessagingException;
-
-	Folder addFolder(String folder, String folderPath) throws MessagingException;
+	ProfileServiceDTO<?> loginUser(UserLoginDTO<?> profileServiceDTO, IEnterpriseName<?> enterpriseName, UUID... identityToken) throws ProfileServiceException;
 }
