@@ -1,18 +1,16 @@
 package com.armineasy.activitymaster.mail.services.enumerations;
 
-import com.armineasy.activitymaster.activitymaster.services.concepts.EnterpriseClassificationDataConcepts;
-import com.armineasy.activitymaster.activitymaster.services.enumtypes.IArrangementTypes;
 import com.armineasy.activitymaster.activitymaster.services.enumtypes.IClassificationDataConceptValue;
+import com.armineasy.activitymaster.activitymaster.services.enumtypes.IResourceType;
 
 import static com.armineasy.activitymaster.activitymaster.services.concepts.EnterpriseClassificationDataConcepts.*;
 
 public enum MailImportResourceItemTypes
-		implements IArrangementTypes<MailImportResourceItemTypes>
+		implements IResourceType<MailImportResourceItemTypes>
 {
-	FolderStatusResourceItem("FolderStatusResourceItem", GlobalClassificationsDataConceptName)
+	FolderStatusResourceItem("FolderStatusResourceItem", GlobalClassificationsDataConceptName);
 
 
-	;
 	private String classificationValue;
 	private IClassificationDataConceptValue<?> dataConceptValue;
 
@@ -28,6 +26,12 @@ public enum MailImportResourceItemTypes
 	}
 
 	@Override
+	public String classificationName()
+	{
+		return name();
+	}
+
+	@Override
 	public String classificationValue()
 	{
 		return classificationValue;
@@ -37,6 +41,12 @@ public enum MailImportResourceItemTypes
 	public String classificationDescription()
 	{
 		return classificationValue;
+	}
+
+	@Override
+	public IClassificationDataConceptValue<?> concept()
+	{
+		return dataConceptValue;
 	}
 
 }

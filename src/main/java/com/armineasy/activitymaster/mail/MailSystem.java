@@ -9,6 +9,7 @@ import com.armineasy.activitymaster.activitymaster.services.dto.IArrangement;
 import com.armineasy.activitymaster.activitymaster.services.dto.IEnterprise;
 import com.armineasy.activitymaster.activitymaster.services.dto.ISystems;
 import com.armineasy.activitymaster.activitymaster.services.system.IArrangementsService;
+import com.armineasy.activitymaster.activitymaster.services.system.IResourceItemService;
 import com.armineasy.activitymaster.activitymaster.systems.SystemsSystem;
 import com.armineasy.activitymaster.mail.services.IMailSystem;
 import com.armineasy.activitymaster.mail.services.classifications.MailSystemClassifications;
@@ -30,6 +31,9 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.armineasy.activitymaster.mail.services.classifications.MailSystemClassifications.*;
+import static com.armineasy.activitymaster.mail.services.classifications.MailSystemResourceItemClassifications.*;
+import static com.armineasy.activitymaster.mail.services.enumerations.MailImportResourceItemTypes.*;
+import static com.jwebmp.guicedinjection.GuiceContext.*;
 
 @Singleton
 public class MailSystem
@@ -51,13 +55,15 @@ public class MailSystem
 	}
 
 	@SuppressWarnings("Duplicates")
-	private void createClassifications(IEnterprise<?> enterprise)
+	private void createClassifications(IEnterprise<?> enterprise,  IActivityMasterProgressMonitor progressMonitor)
 	{
-		ClassificationService classificationService = GuiceContext.get(ClassificationService.class);
-		ISystems activityMasterSystem = GuiceContext.get(SystemsService.class)
+		ClassificationService classificationService = get(ClassificationService.class);
+		ISystems activityMasterSystem = get(SystemsService.class)
 		                                            .getActivityMaster(enterprise);
 
-		IArrangementsService<?> arrangementsService = GuiceContext.get(IArrangementsService.class);
+		IArrangementsService<?> arrangementsService = get(IArrangementsService.class);
+
+		logProgress("Mail System", "Checking Mail Import Classifications", 1, progressMonitor);
 
 		classificationService.create(MailSystemClassifications.MailImport, newSystem.get(enterprise), uuid)
 		                     .createDefaultSecurity(activityMasterSystem, MailSystem.getSystemTokens()
@@ -141,8 +147,18 @@ public class MailSystem
 		classificationService.create(MailImportStage.MailImportNotStarted, newSystem.get(enterprise), uuid)
 		                     .createDefaultSecurity(activityMasterSystem, MailSystem.getSystemTokens()
 		                                                                            .get(enterprise));
+		classificationService.create(FolderStatusObject, newSystem.get(enterprise), uuid)
+		                     .createDefaultSecurity(activityMasterSystem, MailSystem.getSystemTokens()
+		                                                                            .get(enterprise));
+
+		logProgress("Mail System", "Checking Arrangement Types", 1, progressMonitor);
 
 		arrangementsService.createArrangementType(MailImportArrangementTypes.MailImport, newSystem.get(enterprise), uuid);
+
+
+		logProgress("Mail System", "Checking Resource Item Types", 1, progressMonitor);
+		IResourceItemService resourceItemService = get(IResourceItemService.class);
+		resourceItemService.createType(FolderStatusResourceItem, newSystem.get(enterprise), uuid);
 	}
 
 	@Override
@@ -154,16 +170,16 @@ public class MailSystem
 	@Override
 	public int totalTasks()
 	{
-		return 0;
+		return 10;
 	}
 
 	@Override
 	public void postUpdate(IEnterprise<?> enterprise, IActivityMasterProgressMonitor progressMonitor)
 	{
-		newSystem.put(enterprise, GuiceContext.get(SystemsService.class)
+		newSystem.put(enterprise, get(SystemsService.class)
 		                                      .create(enterprise, "Mail System",
 		                                              "The system for managing User Profiles", ""));
-		uuid = GuiceContext.get(SystemsSystem.class)
+		uuid = get(SystemsSystem.class)
 		                   .registerNewSystem(enterprise, newSystem.get(enterprise));
 
 		LogFactory.getLog("MailSystem")
@@ -172,7 +188,7 @@ public class MailSystem
 		          .waitForJob("SecurityTokenStore", 5L, TimeUnit.MINUTES);
 
 		systemTokens.put(enterprise, uuid);
-		createClassifications(enterprise);
+		createClassifications(enterprise,progressMonitor);
 
 		update20190622AddCurrentMailFolder(newSystem.get(enterprise), enterprise, uuid);
 	}
@@ -184,7 +200,7 @@ public class MailSystem
 			byte[] output = is.readAllBytes();
 			String script = new String(output);
 			script = script.replace("-9223372036854775807", "" + ent.getId());
-			GuiceContext.get(ActivityMasterService.class).runScript(script);
+			get(ActivityMasterService.class).runScript(script);
 		}
 		catch (Exception e)
 		{

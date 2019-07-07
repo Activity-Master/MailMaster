@@ -1,27 +1,43 @@
 package com.armineasy.activitymaster.mail.services.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.util.Objects;
 
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class MailFoldersStatus
 {
-	private String folderName;
 	private int current;
 	private int total;
+
+	private String sourceFolderName;
+	private String destFolderName;
 
 	public MailFoldersStatus()
 	{
 		//No config required
 	}
 
-	public String getFolderName()
+	@Override
+	public String toString()
 	{
-		return folderName;
+		try
+		{
+			return new ObjectMapper().writeValueAsString(this);
+		}
+		catch (JsonProcessingException e)
+		{
+			return "CANNOT SERIALIZE MAIL FOLDER STATUS - " + getFolderName();
+		}
 	}
 
-	public MailFoldersStatus setFolderName(String folderName)
+	public String getFolderName()
 	{
-		this.folderName = folderName;
-		return this;
+		return sourceFolderName;
 	}
 
 	public int getCurrent()
@@ -43,6 +59,28 @@ public class MailFoldersStatus
 	public MailFoldersStatus setTotal(int total)
 	{
 		this.total = total;
+		return this;
+	}
+
+	public String getSourceFolderName()
+	{
+		return sourceFolderName;
+	}
+
+	public MailFoldersStatus setSourceFolderName(String sourceFolderName)
+	{
+		this.sourceFolderName = sourceFolderName;
+		return this;
+	}
+
+	public String getDestFolderName()
+	{
+		return destFolderName;
+	}
+
+	public MailFoldersStatus setDestFolderName(String destFolderName)
+	{
+		this.destFolderName = destFolderName;
 		return this;
 	}
 

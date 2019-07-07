@@ -1,6 +1,7 @@
 package com.armineasy.activitymaster.mail.implementations;
 
 import com.armineasy.activitymaster.activitymaster.services.classifications.enterprise.IEnterpriseName;
+import com.armineasy.activitymaster.activitymaster.services.classifications.resourceitems.IResourceItemClassification;
 import com.armineasy.activitymaster.activitymaster.services.dto.IArrangement;
 import com.armineasy.activitymaster.activitymaster.services.dto.IEnterprise;
 import com.armineasy.activitymaster.activitymaster.services.dto.IRelationshipValue;
@@ -12,6 +13,7 @@ import com.armineasy.activitymaster.mail.MailSystem;
 import com.armineasy.activitymaster.mail.servers.MailServer;
 import com.armineasy.activitymaster.mail.services.IMailImportService;
 import com.armineasy.activitymaster.mail.services.classifications.MailSystemClassifications;
+import com.armineasy.activitymaster.mail.services.dto.MailFoldersStatus;
 import com.armineasy.activitymaster.mail.services.dto.MailImportTicket;
 import com.armineasy.activitymaster.mail.services.enumerations.MailImportStage;
 import lombok.experimental.Accessors;
@@ -26,6 +28,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.armineasy.activitymaster.mail.services.classifications.MailSystemClassifications.*;
+import static com.armineasy.activitymaster.mail.services.classifications.MailSystemResourceItemClassifications.*;
+import static com.armineasy.activitymaster.mail.services.enumerations.MailImportResourceItemTypes.*;
 import static com.jwebmp.guicedinjection.GuiceContext.*;
 
 @Accessors(chain = true)
@@ -59,7 +63,7 @@ public class MailImportService
 				}
 				MailImportTicket ticket = new MailImportTicket();
 
-				List<Object[]> rows = arrangement.getValues(MailImport, mailSystem, uuid
+				List<Object[]> rows = arrangement.getValues(MailImport, null,mailSystem, uuid
 						, CurrentFolderImport
 						, CompletedFolderImport
 						, CompletedMailImport
@@ -258,6 +262,23 @@ public class MailImportService
 		arrangement.addOrUpdate(CompletedSizeImport, "" + mailImportTicket.getCompletedSize(), systems);
 		arrangement.addOrUpdate(LastDayOfImport, "" + mailImportTicket.getLastRunDate(), systems);
 		arrangement.addOrUpdate(TotalSizeForMailImport, "" + mailImportTicket.getTotalSize(), systems);
+	}
+
+	public void updateMailFolderStatus(IArrangement<?> arrangement, MailFoldersStatus foldersStatus, IEnterpriseName<?> enterpriseName)
+	{
+		IEnterprise<?> enterprise = get(IEnterpriseService.class)
+				                            .getEnterprise(enterpriseName);
+		ISystems<?> systems = MailSystem.getNewSystem()
+		                                .get(enterprise);
+		UUID uuid = MailSystem.getSystemTokens()
+		                      .get(enterprise);
+
+		IArrangementsService<?> arrangementsService = get(IArrangementsService.class);
+		List output = arrangement.getValues((IResourceItemClassification<?>) FolderStatusObject, foldersStatus.getFolderName(), systems, uuid);
+		for (Object o : output)
+		{
+
+		}
 	}
 
 	public boolean checkCredentials(MailServer server)

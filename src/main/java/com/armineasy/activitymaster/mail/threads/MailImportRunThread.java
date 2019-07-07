@@ -1,21 +1,31 @@
 package com.armineasy.activitymaster.mail.threads;
 
 import com.armineasy.activitymaster.activitymaster.services.classifications.enterprise.IEnterpriseName;
+import com.armineasy.activitymaster.activitymaster.services.dto.IArrangement;
+import com.armineasy.activitymaster.activitymaster.services.dto.IRelationshipValue;
+import com.armineasy.activitymaster.activitymaster.services.dto.IResourceItem;
 import com.armineasy.activitymaster.activitymaster.threads.TransactionalIdentifiedThread;
+import com.armineasy.activitymaster.mail.MailSystem;
 import com.armineasy.activitymaster.mail.implementations.MailboxBoxService;
 import com.armineasy.activitymaster.mail.servers.GMailMailServer;
 import com.armineasy.activitymaster.mail.servers.SaNrgMailServer;
 import com.armineasy.activitymaster.mail.services.IMailImportService;
+import com.armineasy.activitymaster.mail.services.dto.MailFoldersStatus;
 import com.armineasy.activitymaster.mail.services.dto.MailImportTicket;
 import com.sun.mail.imap.IMAPFolder;
 
 import javax.mail.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.armineasy.activitymaster.mail.services.classifications.MailSystemResourceItemClassifications.*;
+import static com.armineasy.activitymaster.mail.services.enumerations.MailImportResourceItemTypes.*;
 import static com.jwebmp.guicedinjection.GuiceContext.*;
 
 public class MailImportRunThread
@@ -23,6 +33,8 @@ public class MailImportRunThread
 		implements Runnable
 {
 	private static final Logger log = Logger.getLogger(MailImportRunThread.class.getName());
+
+	private IArrangement<?> arrangement;
 
 	private MailImportTicket ticket;
 	private IEnterpriseName<?> enterprise;
@@ -44,8 +56,11 @@ public class MailImportRunThread
 
 	private String currentFolder;
 
-	public MailImportRunThread(IEnterpriseName<?> enterprise, MailImportTicket ticket)
+	private MailFoldersStatus foldersStatus;
+
+	public MailImportRunThread(IArrangement<?> arrangement, IEnterpriseName<?> enterprise, MailImportTicket ticket)
 	{
+		this.arrangement = arrangement;
 		this.enterprise = enterprise;
 		this.ticket = ticket;
 		configure();
@@ -61,6 +76,8 @@ public class MailImportRunThread
 		this.dest = new MailboxBoxService(new SaNrgMailServer(ticket.getSanrgMailAddress(), ticket.getSanrgMailPassword()));
 		this.startMail = ticket.getCompletedMails() + 1;
 		this.currentFolder = ticket.getCurrentFolder();
+
+
 	}
 
 	@SuppressWarnings("unchecked")
@@ -99,7 +116,7 @@ public class MailImportRunThread
 	{
 		String prefix = "";
 		for (Map.Entry<String, String> entry : folderMappings
-		                                              .entrySet())
+				                                       .entrySet())
 		{
 			String a = entry.getKey();
 			String b = entry.getValue();
@@ -111,7 +128,7 @@ public class MailImportRunThread
 
 			this.prefix = prefix;
 			this.currentSourceFolderName = a;
-			runIt(dest, source,folderMappings);
+			runIt(dest, source, folderMappings);
 		}
 	}
 
@@ -167,14 +184,14 @@ public class MailImportRunThread
 						boolean doneChildren = false;
 						String allOfIt = result;
 						Folder labelFolder = dest.getFolder(allOfIt);
-						while(!doneChildren)
+						while (!doneChildren)
 						{
 							if (!labelFolder.exists())
 							{
 								labelFolder.create(Folder.HOLDS_MESSAGES);
 								log.log(Level.INFO, "Created Mail Folder : " + allOfIt);
 							}
-							if(allOfIt.contains("/"))
+							if (allOfIt.contains("/"))
 							{
 								allOfIt = allOfIt.substring(allOfIt.indexOf('/') + 1);
 								labelFolder = dest.getFolder(allOfIt);
@@ -200,16 +217,16 @@ public class MailImportRunThread
 						boolean doneChildren = false;
 						String allOfIt = result;
 						Folder labelFolder = dest.getFolder(allOfIt);
-						while(!doneChildren)
+						while (!doneChildren)
 						{
 							if (!labelFolder.exists())
 							{
 								labelFolder.create(Folder.HOLDS_MESSAGES);
 								log.log(Level.INFO, "Created Mail Folder : " + allOfIt);
 							}
-							if(allOfIt.contains("/"))
+							if (allOfIt.contains("/"))
 							{
-								allOfIt = allOfIt.substring(allOfIt.indexOf('/' ) + 1);
+								allOfIt = allOfIt.substring(allOfIt.indexOf('/') + 1);
 								labelFolder = dest.getFolder(allOfIt);
 							}
 							else
@@ -228,12 +245,42 @@ public class MailImportRunThread
 			{
 				folderMappings.put(result, result);
 			}
+		}
+
+		for (Map.Entry<String, String> entry : folderMappings.entrySet())
+		{
+			String key = entry.getKey();
+			String value = entry.getValue();
+			MailFoldersStatus foldersStatus = new MailFoldersStatus();
+			List objects = arrangement.findAll(FolderStatusObject, key, MailSystem.getNewSystem()
+			                                                                      .get(arrangement.getEnterpriseID()),
+			                                   MailSystem.getSystemTokens()
+			                                             .get(arrangement.getEnterpriseID()));
+
+			for (Object object : objects)
+			{
+
+				IRelationshipValue<IArrangement<?>, IResourceItem<?>, ?> relVal = arrangement.addOrReuse(FolderStatusObject, FolderStatusResourceItem,
+				                                                                                         foldersStatus.toString(),
+				                                                                                         foldersStatus.toString(),
+				                                                                                         foldersStatus.toString()
+				                                                                                                      .getBytes(),
+				                                                                                         "application/json",
+				                                                                                         MailSystem.getNewSystem()
+				                                                                                                   .get(arrangement.getEnterpriseID()),
+				                                                                                         MailSystem.getSystemTokens()
+				                                                                                                   .get(arrangement.getEnterpriseID()
+				                                                                                                       ));
+				System.out.println("Stuff");
+
+			}
+
 
 		}
 		return folderMappings;
 	}
 
-	private void runIt(MailboxBoxService dest, MailboxBoxService src,Map<String, String> folderMappings) throws MessagingException
+	private void runIt(MailboxBoxService dest, MailboxBoxService src, Map<String, String> folderMappings) throws MessagingException
 	{
 		String destFolderName = folderMappings.get(currentSourceFolderName);
 		Folder destFolder = dest.getFolder(destFolderName);
@@ -389,6 +436,17 @@ public class MailImportRunThread
 	public String getCurrentFolder()
 	{
 		return currentFolder;
+	}
+
+	public IArrangement<?> getArrangement()
+	{
+		return arrangement;
+	}
+
+	public MailImportRunThread setArrangement(IArrangement<?> arrangement)
+	{
+		this.arrangement = arrangement;
+		return this;
 	}
 
 	public MailImportRunThread setCurrentFolder(String currentFolder)

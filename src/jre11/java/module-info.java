@@ -24,6 +24,7 @@ module com.armineasy.activitymaster.mail {
 	requires com.google.common;
 	requires javax.servlet.api;
 	requires com.fasterxml.jackson.annotation;
+	requires com.fasterxml.jackson.databind;
 
 	provides com.armineasy.activitymaster.activitymaster.services.IActivityMasterSystem with com.armineasy.activitymaster.mail.MailSystem;
 	provides com.jwebmp.guicedinjection.interfaces.IGuiceModule with com.armineasy.activitymaster.mail.implementations.MailMasterBinder;

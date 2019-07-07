@@ -1,16 +1,11 @@
 package com.armineasy.activitymaster.mail.services.dto;
 
-import com.armineasy.activitymaster.mail.implementations.MailboxBoxService;
-import com.armineasy.activitymaster.mail.servers.GMailMailServer;
-import com.armineasy.activitymaster.mail.servers.SaNrgMailServer;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.experimental.Accessors;
 
-import javax.mail.MessagingException;
-import java.io.IOException;
 import java.util.Objects;
 
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.*;
@@ -50,55 +45,6 @@ public class MailImportTicket
 
 	public MailImportTicket()
 	{
-	}
-
-	public boolean verifySaNrgLogin()
-	{
-		try(MailboxBoxService ms = new MailboxBoxService(new SaNrgMailServer(sanrgMailAddress, sanrgMailPassword)))
-		{
-			ms.login();
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-			return false;
-		}
-		return true;
-	}
-
-
-	public boolean verifyGoogleLogin()
-	{
-		try(MailboxBoxService ms = new MailboxBoxService(new GMailMailServer(gmailAddress, gmailPassword)))
-		{
-			ms.login();
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-			return false;
-		}
-		return true;
-	}
-
-
-	public void loadAllFields()
-	{
-		try(MailboxBoxService ms = new MailboxBoxService(new GMailMailServer(gmailAddress, gmailPassword)))
-		{
-			ms.login();
-			ms.loadFolders();
-			totalMails = ms.getTotalMails();
-			totalFolders = ms.getTotalFolders();
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
-		catch (MessagingException e)
-		{
-			e.printStackTrace();
-		}
 	}
 
 	public long getArrangementId()
