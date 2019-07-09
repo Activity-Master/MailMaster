@@ -1,8 +1,6 @@
 package com.armineasy.activitymaster.mail.implementations;
 
-import com.armineasy.activitymaster.activitymaster.db.entities.involvedparty.InvolvedParty;
-import com.armineasy.activitymaster.activitymaster.implementations.InvolvedPartyService;
-import com.armineasy.activitymaster.activitymaster.implementations.SecurityTokenService;
+
 import com.armineasy.activitymaster.activitymaster.services.classifications.enterprise.IEnterpriseName;
 import com.armineasy.activitymaster.activitymaster.services.dto.*;
 import com.armineasy.activitymaster.activitymaster.services.enumtypes.IIdentificationType;
@@ -10,6 +8,8 @@ import com.armineasy.activitymaster.activitymaster.services.exceptions.SecurityA
 import com.armineasy.activitymaster.activitymaster.services.security.Passwords;
 import com.armineasy.activitymaster.activitymaster.services.system.IEnterpriseService;
 import com.armineasy.activitymaster.activitymaster.services.system.IEventService;
+import com.armineasy.activitymaster.activitymaster.services.system.IInvolvedPartyService;
+import com.armineasy.activitymaster.activitymaster.services.system.ISecurityTokenService;
 import com.armineasy.activitymaster.mail.MailSystem;
 import com.armineasy.activitymaster.mail.roles.MailUserRoles;
 import com.armineasy.activitymaster.mail.servers.SaNrgMailServer;
@@ -45,20 +45,17 @@ public class MailService
 {
 
 	@Override
-	public IInvolvedParty<?> findByEmail(String email, IEnterprise<?> enterprise, UUID... token)
+	public IInvolvedParty<?> findByEmail(String email, ISystems<?> systems, UUID... token)
 	{
-		IInvolvedParty<?> party = new InvolvedParty().builder()
-		                                             .findByIdentificationType(enterprise, IdentificationTypeEmailAddress,
-		                                                                       Passwords.integerEncrypt(email.getBytes()), token)
-		                                             .get()
-		                                             .orElse(null);
+		IInvolvedParty<?> party = get(IInvolvedPartyService.class).findByIdentificationType(IdentificationTypeEmailAddress,
+		                                                                                    Passwords.integerEncrypt(email.getBytes()), systems, token);
 		return party;
 	}
 
 	@Override
 	public ProfileServiceDTO<?> loginUser(UserLoginDTO<?> profileServiceDTO, IEnterpriseName<?> enterpriseName, UUID... identityToken) throws ProfileServiceException
 	{
-		InvolvedPartyService involvedPartyService = GuiceContext.get(InvolvedPartyService.class);
+		IInvolvedPartyService<?> involvedPartyService = GuiceContext.get(IInvolvedPartyService.class);
 		IEnterprise<?> enterprise = GuiceContext.get(IEnterpriseService.class)
 		                                        .getEnterprise(enterpriseName);
 
@@ -84,7 +81,7 @@ public class MailService
 
 			IMailService<?> mailService = get(IMailService.class);
 			IInvolvedParty<?> foundParty = mailService.findByEmail(profileServiceDTO.getUserName(),
-			                                                       profileSystem.getEnterpriseID(),
+			                                                       profileSystem,
 			                                                       profileSystemUUID);
 
 			if (foundParty == null)
@@ -138,7 +135,7 @@ public class MailService
 
 	IInvolvedParty<?> registerVisitor(UserRegistrationDTO<?> userRegistrationDTO, IEnterpriseName<?> enterpriseName, UUID... identityToken) throws UserExistsException, WaitingForConfirmationKeyException
 	{
-		InvolvedPartyService involvedPartyService = GuiceContext.get(InvolvedPartyService.class);
+		IInvolvedPartyService<?> involvedPartyService = GuiceContext.get(IInvolvedPartyService.class);
 		IEnterprise<?> enterprise = GuiceContext.get(IEnterpriseService.class)
 		                                        .getEnterprise(enterpriseName);
 
@@ -172,7 +169,7 @@ public class MailService
 
 	IInvolvedParty<?> createNewVisitor(IEvent<?> event, UserRegistrationDTO<?> profileServiceDTO, IEnterprise<?> enterprise, ISystems<?> profileSystem, UUID... identityToken)
 	{
-		InvolvedPartyService involvedPartyService = GuiceContext.get(InvolvedPartyService.class);
+		IInvolvedPartyService<?> involvedPartyService = GuiceContext.get(IInvolvedPartyService.class);
 		IInvolvedParty<?> newIp;
 		//Create new guest record
 		Pair<IIdentificationType<?>, String> guestIDType = new Pair<>();
@@ -184,11 +181,12 @@ public class MailService
 
 		newIp = involvedPartyService.create(profileSystem, guestIDType, true, identityToken);
 
-		ISecurityToken<?> visitorsGroup = GuiceContext.get(SecurityTokenService.class)
+		ISecurityToken<?> visitorsGroup = GuiceContext.get(ISecurityTokenService.class)
 		                                              .getRegisteredGuestsFolder(enterprise, identityToken);
 
-		ISecurityToken<?> myToken = get(SecurityTokenService.class).create(Identity,
-		                                                                   Passwords.integerEncrypt(profileServiceDTO.getUserName().getBytes()),
+		ISecurityToken<?> myToken = get(ISecurityTokenService.class).create(Identity,
+		                                                                   Passwords.integerEncrypt(profileServiceDTO.getUserName()
+		                                                                                                             .getBytes()),
 		                                                                   "An agent registration",
 		                                                                   profileSystem,
 		                                                                   visitorsGroup,
@@ -199,9 +197,10 @@ public class MailService
 		                                                                                        .getBytes())
 				, profileSystem, identityToken);
 
-		newIp.addOrReuse(PreferredNameType, "Agent",profileSystem, identityToken);
+		newIp.addOrReuse(PreferredNameType, "Agent", profileSystem, identityToken);
 		newIp.addOrReuse(CreatedBy, Long.toString(newIp.getId()), profileSystem, identityToken);
-		event.addOrReuse(PerformedBy,newIp.getSecurityIdentity().toString(),  profileSystem, identityToken);
+		event.addOrReuse(PerformedBy, newIp.getSecurityIdentity()
+		                                   .toString(), profileSystem, identityToken);
 
 		profileServiceDTO.setIdentityToken(java.util.UUID.fromString(myToken.getSecurityToken()));
 		UUID profileSystemUUID = MailSystem.getSystemTokens()

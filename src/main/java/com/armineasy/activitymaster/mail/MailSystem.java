@@ -1,31 +1,25 @@
 package com.armineasy.activitymaster.mail;
 
 import com.armineasy.activitymaster.activitymaster.ActivityMasterService;
-import com.armineasy.activitymaster.activitymaster.implementations.ClassificationService;
-import com.armineasy.activitymaster.activitymaster.implementations.SystemsService;
 import com.armineasy.activitymaster.activitymaster.services.IActivityMasterProgressMonitor;
 import com.armineasy.activitymaster.activitymaster.services.IActivityMasterSystem;
-import com.armineasy.activitymaster.activitymaster.services.dto.IArrangement;
 import com.armineasy.activitymaster.activitymaster.services.dto.IEnterprise;
 import com.armineasy.activitymaster.activitymaster.services.dto.ISystems;
 import com.armineasy.activitymaster.activitymaster.services.system.IArrangementsService;
+import com.armineasy.activitymaster.activitymaster.services.system.IClassificationService;
 import com.armineasy.activitymaster.activitymaster.services.system.IResourceItemService;
-import com.armineasy.activitymaster.activitymaster.systems.SystemsSystem;
+import com.armineasy.activitymaster.activitymaster.services.system.ISystemsService;
 import com.armineasy.activitymaster.mail.services.IMailSystem;
 import com.armineasy.activitymaster.mail.services.classifications.MailSystemClassifications;
 import com.armineasy.activitymaster.mail.services.enumerations.MailImportArrangementTypes;
 import com.armineasy.activitymaster.mail.services.enumerations.MailImportStage;
 import com.armineasy.activitymaster.mail.updates.UpdatesLocator;
 import com.google.inject.Singleton;
-import com.jwebmp.guicedinjection.GuiceContext;
 import com.jwebmp.guicedinjection.interfaces.JobService;
 import com.jwebmp.logger.LogFactory;
 
-import javax.sql.DataSource;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -57,8 +51,8 @@ public class MailSystem
 	@SuppressWarnings("Duplicates")
 	private void createClassifications(IEnterprise<?> enterprise,  IActivityMasterProgressMonitor progressMonitor)
 	{
-		ClassificationService classificationService = get(ClassificationService.class);
-		ISystems activityMasterSystem = get(SystemsService.class)
+		IClassificationService<?> classificationService = get(IClassificationService.class);
+		ISystems activityMasterSystem = get(ISystemsService.class)
 		                                            .getActivityMaster(enterprise);
 
 		IArrangementsService<?> arrangementsService = get(IArrangementsService.class);
@@ -176,10 +170,10 @@ public class MailSystem
 	@Override
 	public void postUpdate(IEnterprise<?> enterprise, IActivityMasterProgressMonitor progressMonitor)
 	{
-		newSystem.put(enterprise, get(SystemsService.class)
+		newSystem.put(enterprise, get(ISystemsService.class)
 		                                      .create(enterprise, "Mail System",
 		                                              "The system for managing User Profiles", ""));
-		uuid = get(SystemsSystem.class)
+		uuid = get(ISystemsService.class)
 		                   .registerNewSystem(enterprise, newSystem.get(enterprise));
 
 		LogFactory.getLog("MailSystem")

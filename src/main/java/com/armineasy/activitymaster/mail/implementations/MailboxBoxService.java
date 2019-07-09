@@ -267,6 +267,7 @@ public class MailboxBoxService
 			goThroughFolders(prefix + folder.getName() + "/", folder);
 			folder.close();
 		}
+
 		return fd;
 	}
 

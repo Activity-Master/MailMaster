@@ -76,8 +76,6 @@ public class MailImportRunThread
 		this.dest = new MailboxBoxService(new SaNrgMailServer(ticket.getSanrgMailAddress(), ticket.getSanrgMailPassword()));
 		this.startMail = ticket.getCompletedMails() + 1;
 		this.currentFolder = ticket.getCurrentFolder();
-
-
 	}
 
 	@SuppressWarnings("unchecked")
@@ -92,11 +90,6 @@ public class MailImportRunThread
 				.updateMailImportTicket(ticket, enterprise);
 		try
 		{
-			source.loadFolders();
-			dest.loadFolders();
-			System.out.println("Total Source Mails : " + source.getNumberOfMails());
-			System.out.println("Total Dest Mails : " + dest.getNumberOfMails());
-
 			Map<String, String> foldersToWorkOn = createFolders(dest, source);
 			goThrough(foldersToWorkOn);
 		}
