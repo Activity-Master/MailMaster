@@ -1,8 +1,5 @@
 package com.armineasy.activitymaster.mail.servers;
 
-import lombok.experimental.Accessors;
-
-@Accessors(chain = true)
 public abstract class MailServer
 {
 	private String hostname;

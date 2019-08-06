@@ -4,7 +4,6 @@ module com.armineasy.activitymaster.mail {
 
 	requires com.armineasy.activitymaster.profiles;
 
-	requires lombok;
 	requires org.mapstruct;
 	requires net.sf.uadetector.core;
 	requires org.json;

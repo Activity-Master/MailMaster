@@ -4,7 +4,6 @@ import com.armineasy.activitymaster.activitymaster.services.classifications.ente
 import com.armineasy.activitymaster.activitymaster.services.classifications.resourceitems.IResourceItemClassification;
 import com.armineasy.activitymaster.activitymaster.services.dto.IArrangement;
 import com.armineasy.activitymaster.activitymaster.services.dto.IEnterprise;
-import com.armineasy.activitymaster.activitymaster.services.dto.IRelationshipValue;
 import com.armineasy.activitymaster.activitymaster.services.dto.ISystems;
 import com.armineasy.activitymaster.activitymaster.services.security.Passwords;
 import com.armineasy.activitymaster.activitymaster.services.system.IArrangementsService;
@@ -16,7 +15,6 @@ import com.armineasy.activitymaster.mail.services.classifications.MailSystemClas
 import com.armineasy.activitymaster.mail.services.dto.MailFoldersStatus;
 import com.armineasy.activitymaster.mail.services.dto.MailImportTicket;
 import com.armineasy.activitymaster.mail.services.enumerations.MailImportStage;
-import lombok.experimental.Accessors;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -29,10 +27,9 @@ import java.util.logging.Logger;
 
 import static com.armineasy.activitymaster.mail.services.classifications.MailSystemClassifications.*;
 import static com.armineasy.activitymaster.mail.services.classifications.MailSystemResourceItemClassifications.*;
-import static com.armineasy.activitymaster.mail.services.enumerations.MailImportResourceItemTypes.*;
 import static com.jwebmp.guicedinjection.GuiceContext.*;
 
-@Accessors(chain = true)
+
 public class MailImportService
 		implements IMailImportService<MailImportService>
 {
@@ -186,7 +183,7 @@ public class MailImportService
 				ticket.setPaused(true);
 				try
 				{
-					ticket.setSanrgMailAddress(new String(Passwords.integerDecrypt(row[11].toString())));
+					ticket.setSanrgMailAddress(new String(new Passwords().integerDecrypt(row[11].toString())));
 				}
 				catch (Exception e)
 				{
@@ -194,7 +191,7 @@ public class MailImportService
 				}
 				try
 				{
-					ticket.setGmailAddress(new String(Passwords.integerDecrypt(row[12].toString())));
+					ticket.setGmailAddress(new String(new Passwords().integerDecrypt(row[12].toString())));
 				}
 				catch (Exception e)
 				{

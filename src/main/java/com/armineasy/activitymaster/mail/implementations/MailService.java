@@ -48,7 +48,7 @@ public class MailService
 	public IInvolvedParty<?> findByEmail(String email, ISystems<?> systems, UUID... token)
 	{
 		IInvolvedParty<?> party = get(IInvolvedPartyService.class).findByIdentificationType(IdentificationTypeEmailAddress,
-		                                                                                    Passwords.integerEncrypt(email.getBytes()), systems, token);
+		                                                                                    new Passwords().integerEncrypt(email.getBytes()), systems, token);
 		return party;
 	}
 
@@ -59,7 +59,7 @@ public class MailService
 		IEnterprise<?> enterprise = GuiceContext.get(IEnterpriseService.class)
 		                                        .getEnterprise(enterpriseName);
 
-		profileServiceDTO.setEnterprise(enterprise);
+		profileServiceDTO.setEnterprise(enterpriseName);
 
 		ISystems profileSystem = MailSystem.getNewSystem()
 		                                   .get(enterprise);
@@ -89,7 +89,7 @@ public class MailService
 				UserRegistrationDTO<?> newDto = new UserRegistrationDTO();
 				newDto.setUserName(profileServiceDTO.getUserName());
 				newDto.setTermsandconditions(true);
-				newDto.setEnterprise(enterprise);
+				newDto.setEnterprise(enterpriseName);
 				newDto.setWebClientUUID(profileServiceDTO.getWebClientUUID());
 				newDto.setIdentityToken(profileServiceDTO.getIdentityToken());
 				foundParty = registerVisitor(newDto, enterpriseName, identityToken);
@@ -110,8 +110,8 @@ public class MailService
 			//newIp.addOrUpdate(RememberMe, profileServiceDTO.isRememberMe() + "", profileSystem, profileSystemUUID);
 			if (newIp.has(IdentificationTypeEnterpriseCreatorRole, profileSystem, profileSystemUUID))
 			{
-				get(IRolesService.class).addRole(Administrator, profileServiceDTO, profileSystem, identityToken);
-				get(IRolesService.class).addRole(MailAdministrator, profileServiceDTO, profileSystem, identityToken);
+				get(IRolesService.class).addRole(newIp,Administrator, profileServiceDTO, profileSystem, identityToken);
+				get(IRolesService.class).addRole(newIp,MailAdministrator, profileServiceDTO, profileSystem, identityToken);
 			}
 		}
 		catch (Exception e)
@@ -148,7 +148,7 @@ public class MailService
 		                                      .createEvent(UserRegistered, profileSystem, profileSystemUUID);
 
 		IInvolvedParty<?> ipExists = involvedPartyService.findByIdentificationType(IdentificationTypeEmailAddress,
-		                                                                           Passwords.integerEncrypt(userRegistrationDTO.getUserName()
+		                                                                           new Passwords().integerEncrypt(userRegistrationDTO.getUserName()
 		                                                                                                                       .getBytes())
 				, profileSystem, profileSystemUUID);
 		if (ipExists != null)
@@ -174,7 +174,7 @@ public class MailService
 		//Create new guest record
 		Pair<IIdentificationType<?>, String> guestIDType = new Pair<>();
 		guestIDType.setKey(IdentificationTypeEmailAddress)
-		           .setValue(Passwords.integerEncrypt(profileServiceDTO.getUserName()
+		           .setValue(new Passwords().integerEncrypt(profileServiceDTO.getUserName()
 		                                                               .getBytes()));
 
 		profileServiceDTO.setWebClientUUID(UUID.randomUUID());
@@ -185,7 +185,7 @@ public class MailService
 		                                              .getRegisteredGuestsFolder(enterprise, identityToken);
 
 		ISecurityToken<?> myToken = get(ISecurityTokenService.class).create(Identity,
-		                                                                   Passwords.integerEncrypt(profileServiceDTO.getUserName()
+		                                                                    new Passwords().integerEncrypt(profileServiceDTO.getUserName()
 		                                                                                                             .getBytes()),
 		                                                                   "An agent registration",
 		                                                                   profileSystem,
@@ -193,7 +193,7 @@ public class MailService
 		                                                                   identityToken);
 
 		newIp.addOrUpdate(IdentificationTypeUUID, myToken.getSecurityToken(), profileSystem, identityToken);
-		newIp.addOrUpdate(IdentificationTypeUserName, Passwords.integerEncrypt(profileServiceDTO.getUserName()
+		newIp.addOrUpdate(IdentificationTypeUserName, new Passwords().integerEncrypt(profileServiceDTO.getUserName()
 		                                                                                        .getBytes())
 				, profileSystem, identityToken);
 
@@ -206,7 +206,7 @@ public class MailService
 		UUID profileSystemUUID = MailSystem.getSystemTokens()
 		                                   .get(enterprise);
 
-		get(IRolesService.class).addRole(MailUserRoles.MailUser, profileServiceDTO, profileSystem, profileSystemUUID);
+		get(IRolesService.class).addRole(newIp,MailUserRoles.MailUser, profileServiceDTO, profileSystem, profileSystemUUID);
 
 		return newIp;
 	}

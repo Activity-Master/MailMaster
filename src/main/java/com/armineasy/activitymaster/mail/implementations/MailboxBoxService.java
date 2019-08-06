@@ -14,7 +14,6 @@ import com.armineasy.activitymaster.mail.services.IMailBoxService;
 import com.armineasy.activitymaster.mail.services.classifications.MailSystemClassifications;
 import com.jwebmp.guicedinjection.GuiceContext;
 import com.sun.mail.imap.IMAPFolder;
-import lombok.experimental.Accessors;
 
 import javax.mail.*;
 import java.io.Closeable;
@@ -25,7 +24,7 @@ import java.util.logging.Logger;
 
 import static com.armineasy.activitymaster.mail.services.enumerations.MailImportArrangementTypes.*;
 
-@Accessors(chain = true)
+
 public class MailboxBoxService
 		implements IMailBoxService<MailboxBoxService>, Closeable
 {
@@ -73,7 +72,7 @@ public class MailboxBoxService
 		                          .get(systems.getEnterpriseID());
 		IInvolvedParty<?> involvedPartyService = GuiceContext.get(IInvolvedPartyService.class)
 		                                                     .findByIdentificationType(IdentificationTypes.IdentificationTypeEmailAddress,
-		                                                                               Passwords.integerEncrypt(emailAddress.getBytes())
+		                                                                               new Passwords().integerEncrypt(emailAddress.getBytes())
 				                                                     , systems, identity);
 
 		return involvedPartyService;
