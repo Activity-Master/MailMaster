@@ -13,6 +13,7 @@ import com.armineasy.activitymaster.mail.servers.MailServer;
 import com.armineasy.activitymaster.mail.services.IMailBoxService;
 import com.armineasy.activitymaster.mail.services.classifications.MailSystemClassifications;
 import com.jwebmp.guicedinjection.GuiceContext;
+import com.jwebmp.guicedpersistence.db.annotations.Transactional;
 import com.sun.mail.imap.IMAPFolder;
 
 import javax.mail.*;
@@ -93,6 +94,7 @@ public class MailboxBoxService
 	}
 
 	@Override
+
 	public MailboxBoxService login()
 	{
 		properties.put("mail.transport.protocol", "imap");
@@ -104,6 +106,7 @@ public class MailboxBoxService
 		properties.put("mail.imap.starttls.enable", true);
 
 		session = Session.getDefaultInstance(properties, null);
+
 		try
 		{
 			store = session.getStore("imaps");
