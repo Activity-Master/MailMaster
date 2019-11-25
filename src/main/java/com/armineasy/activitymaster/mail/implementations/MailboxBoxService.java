@@ -12,8 +12,7 @@ import com.armineasy.activitymaster.mail.MailSystem;
 import com.armineasy.activitymaster.mail.servers.MailServer;
 import com.armineasy.activitymaster.mail.services.IMailBoxService;
 import com.armineasy.activitymaster.mail.services.classifications.MailSystemClassifications;
-import com.jwebmp.guicedinjection.GuiceContext;
-import com.jwebmp.guicedpersistence.db.annotations.Transactional;
+import com.guicedee.guicedinjection.GuiceContext;
 import com.sun.mail.imap.IMAPFolder;
 
 import javax.mail.*;

@@ -7,7 +7,7 @@ module com.armineasy.activitymaster.mail {
 	requires org.mapstruct;
 	requires net.sf.uadetector.core;
 	requires org.json;
-	requires com.jwebmp.guicedpersistence;
+	requires com.guicedee.guicedpersistence;
 	requires com.jwebmp.guicedservlets;
 
 	requires cache.annotations.ri.common;
@@ -19,14 +19,14 @@ module com.armineasy.activitymaster.mail {
 	requires com.armineasy.activitymaster.activitymaster;
 	requires com.google.guice;
 
-	requires com.jwebmp.guicedinjection;
+	requires com.guicedee.guicedinjection;
 	requires com.google.common;
 	requires javax.servlet.api;
 	requires com.fasterxml.jackson.annotation;
 	requires com.fasterxml.jackson.databind;
 
 	provides com.armineasy.activitymaster.activitymaster.services.IActivityMasterSystem with com.armineasy.activitymaster.mail.MailSystem;
-	provides com.jwebmp.guicedinjection.interfaces.IGuiceModule with com.armineasy.activitymaster.mail.implementations.MailMasterBinder;
+	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with com.armineasy.activitymaster.mail.implementations.MailMasterBinder;
 
 	opens com.armineasy.activitymaster.mail;
 	exports com.armineasy.activitymaster.mail.servers;

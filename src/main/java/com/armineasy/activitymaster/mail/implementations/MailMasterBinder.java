@@ -6,7 +6,7 @@ import com.armineasy.activitymaster.mail.services.IMailBoxService;
 import com.armineasy.activitymaster.mail.services.IMailService;
 import com.armineasy.activitymaster.mail.services.IMailSystem;
 import com.google.inject.PrivateModule;
-import com.jwebmp.guicedinjection.interfaces.IGuiceModule;
+import com.guicedee.guicedinjection.interfaces.IGuiceModule;
 
 public class MailMasterBinder
 		extends PrivateModule

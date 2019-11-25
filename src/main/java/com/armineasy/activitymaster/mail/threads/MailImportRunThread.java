@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 
 import static com.armineasy.activitymaster.mail.services.classifications.MailSystemResourceItemClassifications.*;
 import static com.armineasy.activitymaster.mail.services.enumerations.MailImportResourceItemTypes.*;
-import static com.jwebmp.guicedinjection.GuiceContext.*;
+import static com.guicedee.guicedinjection.GuiceContext.*;
 
 public class MailImportRunThread
 		extends TransactionalIdentifiedThread

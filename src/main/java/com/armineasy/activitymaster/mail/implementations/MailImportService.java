@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 
 import static com.armineasy.activitymaster.mail.services.classifications.MailSystemClassifications.*;
 import static com.armineasy.activitymaster.mail.services.classifications.MailSystemResourceItemClassifications.*;
-import static com.jwebmp.guicedinjection.GuiceContext.*;
+import static com.guicedee.guicedinjection.GuiceContext.*;
 
 
 public class MailImportService

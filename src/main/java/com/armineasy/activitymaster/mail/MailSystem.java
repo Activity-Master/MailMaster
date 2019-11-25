@@ -15,8 +15,8 @@ import com.armineasy.activitymaster.mail.services.enumerations.MailImportArrange
 import com.armineasy.activitymaster.mail.services.enumerations.MailImportStage;
 import com.armineasy.activitymaster.mail.updates.UpdatesLocator;
 import com.google.inject.Singleton;
-import com.jwebmp.guicedinjection.interfaces.JobService;
-import com.jwebmp.logger.LogFactory;
+import com.guicedee.guicedinjection.interfaces.JobService;
+import com.guicedee.logger.LogFactory;
 
 import java.io.InputStream;
 import java.util.HashMap;
@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 import static com.armineasy.activitymaster.mail.services.classifications.MailSystemClassifications.*;
 import static com.armineasy.activitymaster.mail.services.classifications.MailSystemResourceItemClassifications.*;
 import static com.armineasy.activitymaster.mail.services.enumerations.MailImportResourceItemTypes.*;
-import static com.jwebmp.guicedinjection.GuiceContext.*;
+import static com.guicedee.guicedinjection.GuiceContext.*;
 
 @Singleton
 public class MailSystem

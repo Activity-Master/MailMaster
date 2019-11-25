@@ -23,8 +23,8 @@ import com.armineasy.activitymaster.profiles.exceptions.ProfileServiceException;
 import com.armineasy.activitymaster.profiles.exceptions.UserExistsException;
 import com.armineasy.activitymaster.profiles.exceptions.WaitingForConfirmationKeyException;
 import com.armineasy.activitymaster.profiles.services.interfaces.IRolesService;
-import com.jwebmp.guicedinjection.GuiceContext;
-import com.jwebmp.guicedinjection.pairing.Pair;
+import com.guicedee.guicedinjection.GuiceContext;
+import com.guicedee.guicedinjection.pairing.Pair;
 
 import java.util.UUID;
 
@@ -37,7 +37,7 @@ import static com.armineasy.activitymaster.profiles.enumerations.ProfileClassifi
 import static com.armineasy.activitymaster.profiles.enumerations.ProfileEventTypes.*;
 import static com.armineasy.activitymaster.profiles.enumerations.ProfileIdentificationTypes.*;
 import static com.armineasy.activitymaster.profiles.services.enumerations.UserRoles.*;
-import static com.jwebmp.guicedinjection.GuiceContext.*;
+import static com.guicedee.guicedinjection.GuiceContext.*;
 
 @SuppressWarnings("Duplicates")
 public class MailService
