@@ -13,10 +13,11 @@
     <name>Mail Master</name>
 
     <dependencies>
+
         <dependency>
-            <groupId>jakarta.mail</groupId>
-            <artifactId>jakarta.mail-api</artifactId>
-            <version>1.6.4</version>
+            <groupId>com.guicedee.services</groupId>
+            <artifactId>jakarta.mail</artifactId>
+            <type>jar</type>
         </dependency>
 
         <dependency>
@@ -34,34 +35,23 @@
         <dependency>
             <groupId>com.guicedee.persistence</groupId>
             <artifactId>guiced-persistence-btm</artifactId>
-            <version>${project.version}</version>
         </dependency>
-
 
         <dependency>
             <groupId>com.guicedee.services</groupId>
             <artifactId>uadetector-core</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.guicedee.servlets</groupId>
             <artifactId>guiced-servlets</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.guicedee.services</groupId>
             <artifactId>uadetector-resources</artifactId>
-            <version>${project.version}</version>
             <type>jar</type>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.mail</groupId>
-            <artifactId>imap</artifactId>
-            <version>1.6.4</version>
-            <scope>compile</scope>
         </dependency>
 
     </dependencies>

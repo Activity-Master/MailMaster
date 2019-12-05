@@ -1,8 +1,8 @@
-package com.armineasy.activitymaster.mail;
+package com.guicedee.activitymaster.mail;
 
-import com.armineasy.activitymaster.mail.importer.MailImporter;
-import com.armineasy.activitymaster.mail.servers.GMailMailServer;
-import com.armineasy.activitymaster.mail.servers.SaNrgMailServer;
+import com.guicedee.activitymaster.mail.importer.MailImporter;
+import com.guicedee.activitymaster.mail.servers.GMailMailServer;
+import com.guicedee.activitymaster.mail.servers.SaNrgMailServer;
 import com.jwebmp.guicedhazelcast.HazelcastConfigHandler;
 import com.jwebmp.guicedhazelcast.implementations.HazelcastBinderGuice;
 import com.jwebmp.guicedhazelcast.implementations.HazelcastPreStartup;

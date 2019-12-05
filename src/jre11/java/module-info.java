@@ -1,14 +1,13 @@
-module com.armineasy.activitymaster.mail {
+module com.guicedee.activitymaster.mail {
 
-	requires java.mail;
+	requires jakarta.mail;
 
-	requires com.armineasy.activitymaster.profiles;
+	requires com.guicedee.activitymaster.profiles;
 
-	requires org.mapstruct;
 	requires net.sf.uadetector.core;
 	requires org.json;
 	requires com.guicedee.guicedpersistence;
-	requires com.jwebmp.guicedservlets;
+	requires com.guicedee.guicedservlets;
 
 	requires cache.annotations.ri.common;
 	requires cache.annotations.ri.guice;
@@ -16,7 +15,7 @@ module com.armineasy.activitymaster.mail {
 
 	requires java.sql;
 
-	requires com.armineasy.activitymaster.activitymaster;
+	requires com.guicedee.activitymaster.core;
 	requires com.google.guice;
 
 	requires com.guicedee.guicedinjection;
@@ -25,21 +24,21 @@ module com.armineasy.activitymaster.mail {
 	requires com.fasterxml.jackson.annotation;
 	requires com.fasterxml.jackson.databind;
 
-	provides com.armineasy.activitymaster.activitymaster.services.IActivityMasterSystem with com.armineasy.activitymaster.mail.MailSystem;
-	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with com.armineasy.activitymaster.mail.implementations.MailMasterBinder;
+	provides com.guicedee.activitymaster.core.services.IActivityMasterSystem with com.guicedee.activitymaster.mail.MailSystem;
+	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with com.guicedee.activitymaster.mail.implementations.MailMasterBinder;
 
-	opens com.armineasy.activitymaster.mail;
-	exports com.armineasy.activitymaster.mail.servers;
-	exports com.armineasy.activitymaster.mail.services;
-	exports com.armineasy.activitymaster.mail.services.enumerations;
-	exports com.armineasy.activitymaster.mail;
-	exports com.armineasy.activitymaster.mail.services.classifications;
-	exports com.armineasy.activitymaster.mail.services.dto;
+	opens com.guicedee.activitymaster.mail;
+	exports com.guicedee.activitymaster.mail.servers;
+	exports com.guicedee.activitymaster.mail.services;
+	exports com.guicedee.activitymaster.mail.services.enumerations;
+	exports com.guicedee.activitymaster.mail;
+	exports com.guicedee.activitymaster.mail.services.classifications;
+	exports com.guicedee.activitymaster.mail.services.dto;
 
-	opens com.armineasy.activitymaster.mail.services.dto to com.fasterxml.jackson.databind;
-	opens com.armineasy.activitymaster.mail.implementations to com.fasterxml.jackson.databind,com.google.guice;
-	exports com.armineasy.activitymaster.mail.importer;
-	exports com.armineasy.activitymaster.mail.threads;
-	exports com.armineasy.activitymaster.mail.roles;
+	opens com.guicedee.activitymaster.mail.services.dto to com.fasterxml.jackson.databind;
+	opens com.guicedee.activitymaster.mail.implementations to com.fasterxml.jackson.databind,com.google.guice;
+	exports com.guicedee.activitymaster.mail.importer;
+	exports com.guicedee.activitymaster.mail.threads;
+	exports com.guicedee.activitymaster.mail.roles;
 
 }
