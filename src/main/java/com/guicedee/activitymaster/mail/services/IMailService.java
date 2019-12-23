@@ -4,7 +4,7 @@ import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnt
 import com.guicedee.activitymaster.core.services.dto.IInvolvedParty;
 import com.guicedee.activitymaster.core.services.dto.ISystems;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
-import com.guicedee.activitymaster.profiles.dto.UserLoginDTO;
+import com.guicedee.activitymaster.profiles.webdto.UserLoginDTO;
 import com.guicedee.activitymaster.profiles.exceptions.ProfileServiceException;
 
 import java.util.UUID;
