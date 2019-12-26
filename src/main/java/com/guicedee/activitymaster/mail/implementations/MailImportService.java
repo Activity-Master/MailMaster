@@ -44,7 +44,7 @@ public class MailImportService
 	{
 		IEnterprise<?> enterprise = get(IEnterpriseService.class)
 				                            .getEnterprise(enterpriseName);
-		ISystems<?> mailSystem = MailSystem.getNewSystem()
+		ISystems<?> mailSystem = MailSystem.getSystemsMap()
 		                                   .get(enterprise);
 		UUID uuid = MailSystem.getSystemTokens()
 		                      .get(enterprise);
@@ -218,7 +218,7 @@ public class MailImportService
 	{
 		IEnterprise<?> enterprise = get(IEnterpriseService.class)
 				                            .getEnterprise(enterpriseName);
-		return MailSystem.getNewSystem()
+		return MailSystem.getSystemsMap()
 		                 .get(enterprise);
 	}
 
@@ -237,7 +237,7 @@ public class MailImportService
 	{
 		IEnterprise<?> enterprise = get(IEnterpriseService.class)
 				                            .getEnterprise(enterpriseName);
-		ISystems<?> systems = MailSystem.getNewSystem()
+		ISystems<?> systems = MailSystem.getSystemsMap()
 		                                .get(enterprise);
 		UUID uuid = MailSystem.getSystemTokens()
 		                      .get(enterprise);
@@ -265,7 +265,7 @@ public class MailImportService
 	{
 		IEnterprise<?> enterprise = get(IEnterpriseService.class)
 				                            .getEnterprise(enterpriseName);
-		ISystems<?> systems = MailSystem.getNewSystem()
+		ISystems<?> systems = MailSystem.getSystemsMap()
 		                                .get(enterprise);
 		UUID uuid = MailSystem.getSystemTokens()
 		                      .get(enterprise);

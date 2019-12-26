@@ -245,7 +245,7 @@ public class MailImportRunThread
 			String key = entry.getKey();
 			String value = entry.getValue();
 			MailFoldersStatus foldersStatus = new MailFoldersStatus();
-			List objects = arrangement.findAll(FolderStatusObject, key, MailSystem.getNewSystem()
+			List objects = arrangement.findAll(FolderStatusObject, key, MailSystem.getSystemsMap()
 			                                                                      .get(arrangement.getEnterpriseID()),
 			                                   MailSystem.getSystemTokens()
 			                                             .get(arrangement.getEnterpriseID()));
@@ -259,7 +259,7 @@ public class MailImportRunThread
 				                                                                                         foldersStatus.toString()
 				                                                                                                      .getBytes(),
 				                                                                                         "application/json",
-				                                                                                         MailSystem.getNewSystem()
+				                                                                                         MailSystem.getSystemsMap()
 				                                                                                                   .get(arrangement.getEnterpriseID()),
 				                                                                                         MailSystem.getSystemTokens()
 				                                                                                                   .get(arrangement.getEnterpriseID()

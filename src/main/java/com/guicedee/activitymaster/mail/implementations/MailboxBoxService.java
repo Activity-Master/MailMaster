@@ -82,7 +82,7 @@ public class MailboxBoxService
 	@Override
 	public ISystems<?> getMailSystem(IEnterprise<?> enterprise)
 	{
-		return MailSystem.getNewSystem()
+		return MailSystem.getSystemsMap()
 		                 .get(enterprise);
 	}
 
@@ -133,7 +133,7 @@ public class MailboxBoxService
 	{
 		UUID identity = MailSystem.getSystemTokens()
 		                          .get(ip.getEnterpriseID());
-		ISystems<?> system = MailSystem.getNewSystem()
+		ISystems<?> system = MailSystem.getSystemsMap()
 		                            .get(ip.getEnterpriseID());
 
 		IArrangementsService<?> arrangementsService = GuiceContext.get(IArrangementsService.class);

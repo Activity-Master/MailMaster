@@ -61,7 +61,7 @@ public class MailService
 
 		profileServiceDTO.setEnterprise(enterpriseName);
 
-		ISystems profileSystem = MailSystem.getNewSystem()
+		ISystems profileSystem = MailSystem.getSystemsMap()
 		                                   .get(enterprise);
 		UUID profileSystemUUID = MailSystem.getSystemTokens()
 		                                   .get(enterprise);
@@ -139,7 +139,7 @@ public class MailService
 		IEnterprise<?> enterprise = GuiceContext.get(IEnterpriseService.class)
 		                                        .getEnterprise(enterpriseName);
 
-		ISystems profileSystem = MailSystem.getNewSystem()
+		ISystems profileSystem = MailSystem.getSystemsMap()
 		                                   .get(enterprise);
 		UUID profileSystemUUID = MailSystem.getSystemTokens()
 		                                   .get(enterprise);
