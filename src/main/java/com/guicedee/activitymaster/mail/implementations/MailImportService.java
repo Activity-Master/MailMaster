@@ -15,6 +15,7 @@ import com.guicedee.activitymaster.mail.services.classifications.MailSystemClass
 import com.guicedee.activitymaster.mail.services.dto.MailFoldersStatus;
 import com.guicedee.activitymaster.mail.services.dto.MailImportTicket;
 import com.guicedee.activitymaster.mail.services.enumerations.MailImportStage;
+import com.guicedee.guicedinjection.GuiceContext;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -28,7 +29,6 @@ import java.util.logging.Logger;
 import static com.guicedee.activitymaster.mail.services.classifications.MailSystemClassifications.*;
 import static com.guicedee.activitymaster.mail.services.classifications.MailSystemResourceItemClassifications.*;
 import static com.guicedee.guicedinjection.GuiceContext.*;
-
 
 public class MailImportService
 		implements IMailImportService<MailImportService>
@@ -44,10 +44,10 @@ public class MailImportService
 	{
 		IEnterprise<?> enterprise = get(IEnterpriseService.class)
 				                            .getEnterprise(enterpriseName);
-		ISystems<?> mailSystem = MailSystem.getSystemsMap()
-		                                   .get(enterprise);
-		UUID uuid = MailSystem.getSystemTokens()
-		                      .get(enterprise);
+		UUID uuid = GuiceContext.get(MailSystem.class)
+		                        .getSystemToken(enterpriseName);
+		ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
+		                                     .getSystem(enterpriseName);
 
 		List<MailImportTicket> tickets = new ArrayList<>();
 		if (arrangements != null)
@@ -60,7 +60,7 @@ public class MailImportService
 				}
 				MailImportTicket ticket = new MailImportTicket();
 
-				List<Object[]> rows = arrangement.getValues(MailImport, null,mailSystem, uuid
+				List<Object[]> rows = arrangement.getValues(MailImport, null, mailSystem, uuid
 						, CurrentFolderImport
 						, CompletedFolderImport
 						, CompletedMailImport
@@ -74,8 +74,10 @@ public class MailImportService
 						, TargetUserNameKey
 						, SourceUserNameKey
 						, LastDayOfImport);
-				if(rows.isEmpty())
+				if (rows.isEmpty())
+				{
 					continue;
+				}
 				Object[] row = rows.get(0);
 
 				ticket.setArrangementId(arrangement.getId());
@@ -216,19 +218,13 @@ public class MailImportService
 	@Override
 	public ISystems<?> getSystem(IEnterpriseName<?> enterpriseName)
 	{
-		IEnterprise<?> enterprise = get(IEnterpriseService.class)
-				                            .getEnterprise(enterpriseName);
-		return MailSystem.getSystemsMap()
-		                 .get(enterprise);
+		return get(MailSystem.class).getSystem(enterpriseName);
 	}
 
 	@Override
 	public UUID getSystemUUID(IEnterpriseName<?> enterpriseName)
 	{
-		IEnterprise<?> enterprise = get(IEnterpriseService.class)
-				                            .getEnterprise(enterpriseName);
-		return MailSystem.getSystemTokens()
-		                 .get(enterprise);
+		return get(MailSystem.class).getSystemToken(enterpriseName);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -237,41 +233,40 @@ public class MailImportService
 	{
 		IEnterprise<?> enterprise = get(IEnterpriseService.class)
 				                            .getEnterprise(enterpriseName);
-		ISystems<?> systems = MailSystem.getSystemsMap()
-		                                .get(enterprise);
-		UUID uuid = MailSystem.getSystemTokens()
-		                      .get(enterprise);
+		UUID uuid = GuiceContext.get(MailSystem.class)
+		                        .getSystemToken(enterpriseName);
+		ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
+		                                     .getSystem(enterpriseName);
+		IArrangement<?> arrangement = get(IArrangementsService.class).find(mailImportTicket.getArrangementId(), mailSystem.getEnterpriseID(), uuid);
 
-		IArrangement<?> arrangement = get(IArrangementsService.class).find(mailImportTicket.getArrangementId(), systems.getEnterpriseID(), uuid);
+		arrangement.addOrUpdate(ConfirmedSourceMailImport, "" + mailImportTicket.isGmailChecked(), mailSystem);
+		arrangement.addOrUpdate(ConfirmedDestinationMailImport, "" + mailImportTicket.isSanrgChecked(), mailSystem);
 
-		arrangement.addOrUpdate(ConfirmedSourceMailImport, "" + mailImportTicket.isGmailChecked(), systems);
-		arrangement.addOrUpdate(ConfirmedDestinationMailImport, "" + mailImportTicket.isSanrgChecked(), systems);
+		arrangement.addOrUpdate(CurrentDayOfImport, "" + mailImportTicket.getLastRunDate(), mailSystem);
+		arrangement.addOrUpdate(CurrentDaySizeOfImport, "" + mailImportTicket.getTotalSizeForToday(), mailSystem);
 
-		arrangement.addOrUpdate(CurrentDayOfImport, "" + mailImportTicket.getLastRunDate(), systems);
-		arrangement.addOrUpdate(CurrentDaySizeOfImport, "" + mailImportTicket.getTotalSizeForToday(), systems);
+		arrangement.addOrUpdate(CurrentFolderImport, mailImportTicket.getCurrentFolder(), mailSystem);
 
-		arrangement.addOrUpdate(CurrentFolderImport, mailImportTicket.getCurrentFolder(), systems);
-
-		arrangement.addOrUpdate(TotalCountOfMailImport, "" + mailImportTicket.getTotalMails(), systems);
-		arrangement.addOrUpdate(TotalFoldersForMailImport, "" + mailImportTicket.getTotalFolders(), systems);
-		arrangement.addOrUpdate(CompletedMailImport, "" + mailImportTicket.getCompletedMails(), systems);
-		arrangement.addOrUpdate(CompletedFolderImport, "" + mailImportTicket.getCompletedFolders(), systems);
-		arrangement.addOrUpdate(CompletedSizeImport, "" + mailImportTicket.getCompletedSize(), systems);
-		arrangement.addOrUpdate(LastDayOfImport, "" + mailImportTicket.getLastRunDate(), systems);
-		arrangement.addOrUpdate(TotalSizeForMailImport, "" + mailImportTicket.getTotalSize(), systems);
+		arrangement.addOrUpdate(TotalCountOfMailImport, "" + mailImportTicket.getTotalMails(), mailSystem);
+		arrangement.addOrUpdate(TotalFoldersForMailImport, "" + mailImportTicket.getTotalFolders(), mailSystem);
+		arrangement.addOrUpdate(CompletedMailImport, "" + mailImportTicket.getCompletedMails(), mailSystem);
+		arrangement.addOrUpdate(CompletedFolderImport, "" + mailImportTicket.getCompletedFolders(), mailSystem);
+		arrangement.addOrUpdate(CompletedSizeImport, "" + mailImportTicket.getCompletedSize(), mailSystem);
+		arrangement.addOrUpdate(LastDayOfImport, "" + mailImportTicket.getLastRunDate(), mailSystem);
+		arrangement.addOrUpdate(TotalSizeForMailImport, "" + mailImportTicket.getTotalSize(), mailSystem);
 	}
 
 	public void updateMailFolderStatus(IArrangement<?> arrangement, MailFoldersStatus foldersStatus, IEnterpriseName<?> enterpriseName)
 	{
 		IEnterprise<?> enterprise = get(IEnterpriseService.class)
 				                            .getEnterprise(enterpriseName);
-		ISystems<?> systems = MailSystem.getSystemsMap()
-		                                .get(enterprise);
-		UUID uuid = MailSystem.getSystemTokens()
-		                      .get(enterprise);
+		UUID identity = GuiceContext.get(MailSystem.class)
+		                            .getSystemToken(enterpriseName);
+		ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
+		                                     .getSystem(enterpriseName);
 
 		IArrangementsService<?> arrangementsService = get(IArrangementsService.class);
-		List output = arrangement.getValues((IResourceItemClassification<?>) FolderStatusObject, foldersStatus.getFolderName(), systems, uuid);
+		List output = arrangement.getValues((IResourceItemClassification<?>) FolderStatusObject, foldersStatus.getFolderName(), mailSystem, identity);
 		for (Object o : output)
 		{
 
@@ -292,7 +287,14 @@ public class MailImportService
 		}
 	}
 
+	@Override
+	public int hashCode()
+	{
+		int result = 1;
+		return result;
+	}
 
+	@Override
 	public boolean equals(final Object o)
 	{
 		if (o == this)
@@ -316,12 +318,7 @@ public class MailImportService
 		return other instanceof MailImportService;
 	}
 
-	public int hashCode()
-	{
-		int result = 1;
-		return result;
-	}
-
+	@Override
 	public String toString()
 	{
 		return "MailImportService()";

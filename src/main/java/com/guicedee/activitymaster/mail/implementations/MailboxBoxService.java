@@ -24,22 +24,18 @@ import java.util.logging.Logger;
 
 import static com.guicedee.activitymaster.mail.services.enumerations.MailImportArrangementTypes.*;
 
-
 public class MailboxBoxService
 		implements IMailBoxService<MailboxBoxService>, Closeable
 {
 	private static final Logger log = Logger.getLogger(MailboxBoxService.class.getName());
+	boolean gotMyQuota = false;
+	boolean isGmail = false;
 	private MailServer server;
-
 	private Session session;
 	private Properties properties;
-
 	private Store store;
-
 	private Map<String, Integer> folderMessages = new LinkedHashMap<>();
-
 	private boolean loggedIn;
-
 	private long totalMails;
 	private long totalFolders;
 	private long totalSize;
@@ -69,8 +65,8 @@ public class MailboxBoxService
 	@Override
 	public IInvolvedParty<?> findByEmail(String emailAddress, ISystems<?> systems, UUID... identityToken)
 	{
-		UUID identity = MailSystem.getSystemTokens()
-		                          .get(systems.getEnterpriseID());
+		UUID identity = GuiceContext.get(MailSystem.class)
+		                            .getSystemToken(systems.getEnterprise());
 		IInvolvedParty<?> involvedPartyService = GuiceContext.get(IInvolvedPartyService.class)
 		                                                     .findByIdentificationType(IdentificationTypes.IdentificationTypeEmailAddress,
 		                                                                               new Passwords().integerEncrypt(emailAddress.getBytes())
@@ -82,15 +78,15 @@ public class MailboxBoxService
 	@Override
 	public ISystems<?> getMailSystem(IEnterprise<?> enterprise)
 	{
-		return MailSystem.getSystemsMap()
-		                 .get(enterprise);
+		return GuiceContext.get(MailSystem.class)
+		                   .getSystem(enterprise);
 	}
 
 	@Override
 	public UUID getMailUUID(IEnterprise<?> enterprise)
 	{
-		return MailSystem.getSystemTokens()
-		                 .get(enterprise);
+		return GuiceContext.get(MailSystem.class)
+		                   .getSystemToken(enterprise);
 	}
 
 	@Override
@@ -131,14 +127,14 @@ public class MailboxBoxService
 	@Override
 	public IArrangement<?> createArrangement(IInvolvedParty<?> ip, String value, UUID... identityToken)
 	{
-		UUID identity = MailSystem.getSystemTokens()
-		                          .get(ip.getEnterpriseID());
-		ISystems<?> system = MailSystem.getSystemsMap()
-		                            .get(ip.getEnterpriseID());
+		UUID identity = GuiceContext.get(MailSystem.class)
+		                            .getSystemToken(ip.getEnterprise());
+		ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
+		                                     .getSystem(ip.getEnterprise());
 
 		IArrangementsService<?> arrangementsService = GuiceContext.get(IArrangementsService.class);
-		IArrangement<?> a = arrangementsService.create(MailImport, value, system, identityToken);
-		a.add(ip, MailSystemClassifications.MailImport, value, system, identity);
+		IArrangement<?> a = arrangementsService.create(MailImport, value, mailSystem, identityToken);
+		a.add(ip, MailSystemClassifications.MailImport, value, mailSystem, identity);
 
 		return a;
 	}
@@ -176,8 +172,107 @@ public class MailboxBoxService
 		return totalMails;
 	}
 
-	boolean gotMyQuota = false;
-	boolean isGmail = false;
+	@Override
+	public List<Folder> getFolders(String folderPath) throws MessagingException
+	{
+		List<Folder> fold = new ArrayList<>();
+		String[] list = folderPath.split("/");
+		Folder f = store.getDefaultFolder();
+		for (String s : list)
+		{
+			f = f.getFolder(s);
+			fold.add(f);
+		}
+		return fold;
+	}
+
+	@Override
+	public Folder addFolder(String folder, String folderPath) throws MessagingException
+	{
+		if (!loggedIn)
+		{
+			login();
+		}
+		String[] list = folderPath.split("/");
+		Folder f = store.getDefaultFolder();
+		for (String s : list)
+		{
+			f = f.getFolder(s);
+			if (!f.isOpen())
+			{
+				try
+				{
+					f.open(Folder.READ_ONLY);
+				}
+				catch (MessagingException me)
+				{
+					//cant use folder
+					continue;
+				}
+			}
+			f.close(true);
+		}
+		Folder newFolder = f.getFolder(folder);
+		if (!newFolder.exists())
+		{
+			newFolder.create(Folder.HOLDS_MESSAGES);
+		}
+		try
+		{
+			if (!newFolder.isOpen())
+			{
+				newFolder.open(Folder.READ_WRITE);
+			}
+			if (!f.isOpen())
+			{
+				f.open(Folder.READ_WRITE);
+			}
+			folderMessages.put(newFolder.getFullName(), 0);
+			f.close(true);
+			newFolder.close(true);
+		}
+		catch (FolderNotFoundException nfe)
+		{
+			log.log(Level.WARNING, "Folder not found : " + f.getFullName(), nfe);
+		}
+		return newFolder;
+	}
+
+	@Override
+	public long getTotalFolders()
+	{
+		return this.totalFolders;
+	}
+
+	@Override
+	public long getTotalSize()
+	{
+		return this.totalSize;
+	}
+
+	@Override
+	public long getTotalMails()
+	{
+		return this.totalMails;
+	}
+
+	public MailboxBoxService setTotalMails(long totalMails)
+	{
+		this.totalMails = totalMails;
+		return this;
+	}
+
+	public MailboxBoxService setTotalSize(long totalSize)
+	{
+		this.totalSize = totalSize;
+		return this;
+	}
+
+	public MailboxBoxService setTotalFolders(long totalFolders)
+	{
+		this.totalFolders = totalFolders;
+		return this;
+	}
 
 	private Folder goThroughFolders(String prefix, Folder fd) throws MessagingException
 	{
@@ -273,76 +368,10 @@ public class MailboxBoxService
 		return fd;
 	}
 
-	@Override
-	public List<Folder> getFolders(String folderPath) throws MessagingException
-	{
-		List<Folder> fold = new ArrayList<>();
-		String[] list = folderPath.split("/");
-		Folder f = store.getDefaultFolder();
-		for (String s : list)
-		{
-			f = f.getFolder(s);
-			fold.add(f);
-		}
-		return fold;
-	}
-
 	public Folder getFolder(String folderPath) throws MessagingException
 	{
 		Folder f = store.getDefaultFolder();
 		return f.getFolder(folderPath);
-	}
-
-	@Override
-	public Folder addFolder(String folder, String folderPath) throws MessagingException
-	{
-		if (!loggedIn)
-		{
-			login();
-		}
-		String[] list = folderPath.split("/");
-		Folder f = store.getDefaultFolder();
-		for (String s : list)
-		{
-			f = f.getFolder(s);
-			if (!f.isOpen())
-			{
-				try
-				{
-					f.open(Folder.READ_ONLY);
-				}
-				catch (MessagingException me)
-				{
-					//cant use folder
-					continue;
-				}
-			}
-			f.close(true);
-		}
-		Folder newFolder = f.getFolder(folder);
-		if (!newFolder.exists())
-		{
-			newFolder.create(Folder.HOLDS_MESSAGES);
-		}
-		try
-		{
-			if (!newFolder.isOpen())
-			{
-				newFolder.open(Folder.READ_WRITE);
-			}
-			if (!f.isOpen())
-			{
-				f.open(Folder.READ_WRITE);
-			}
-			folderMessages.put(newFolder.getFullName(), 0);
-			f.close(true);
-			newFolder.close(true);
-		}
-		catch (FolderNotFoundException nfe)
-		{
-			log.log(Level.WARNING, "Folder not found : " + f.getFullName(), nfe);
-		}
-		return newFolder;
 	}
 
 	@Override
@@ -364,44 +393,15 @@ public class MailboxBoxService
 		return folderMessages;
 	}
 
+	public MailboxBoxService setFolderMessages(Map<String, Integer> folderMessages)
+	{
+		this.folderMessages = folderMessages;
+		return this;
+	}
+
 	public Session getSession()
 	{
 		return this.session;
-	}
-
-	public Properties getProperties()
-	{
-		return this.properties;
-	}
-
-	public Store getStore()
-	{
-		return this.store;
-	}
-
-	public boolean isLoggedIn()
-	{
-		return this.loggedIn;
-	}
-
-	public long getTotalMails()
-	{
-		return this.totalMails;
-	}
-
-	public long getTotalFolders()
-	{
-		return this.totalFolders;
-	}
-
-	public long getTotalSize()
-	{
-		return this.totalSize;
-	}
-
-	public boolean isGotMyQuota()
-	{
-		return this.gotMyQuota;
 	}
 
 	public MailboxBoxService setSession(Session session)
@@ -410,10 +410,20 @@ public class MailboxBoxService
 		return this;
 	}
 
+	public Properties getProperties()
+	{
+		return this.properties;
+	}
+
 	public MailboxBoxService setProperties(Properties properties)
 	{
 		this.properties = properties;
 		return this;
+	}
+
+	public Store getStore()
+	{
+		return this.store;
 	}
 
 	public MailboxBoxService setStore(Store store)
@@ -422,10 +432,9 @@ public class MailboxBoxService
 		return this;
 	}
 
-	public MailboxBoxService setFolderMessages(Map<String, Integer> folderMessages)
+	public boolean isLoggedIn()
 	{
-		this.folderMessages = folderMessages;
-		return this;
+		return this.loggedIn;
 	}
 
 	public MailboxBoxService setLoggedIn(boolean loggedIn)
@@ -434,22 +443,9 @@ public class MailboxBoxService
 		return this;
 	}
 
-	public MailboxBoxService setTotalMails(long totalMails)
+	public boolean isGotMyQuota()
 	{
-		this.totalMails = totalMails;
-		return this;
-	}
-
-	public MailboxBoxService setTotalFolders(long totalFolders)
-	{
-		this.totalFolders = totalFolders;
-		return this;
-	}
-
-	public MailboxBoxService setTotalSize(long totalSize)
-	{
-		this.totalSize = totalSize;
-		return this;
+		return this.gotMyQuota;
 	}
 
 	public MailboxBoxService setGotMyQuota(boolean gotMyQuota)

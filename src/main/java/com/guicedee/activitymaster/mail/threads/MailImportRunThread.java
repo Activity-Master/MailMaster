@@ -4,6 +4,7 @@ import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnt
 import com.guicedee.activitymaster.core.services.dto.IArrangement;
 import com.guicedee.activitymaster.core.services.dto.IRelationshipValue;
 import com.guicedee.activitymaster.core.services.dto.IResourceItem;
+import com.guicedee.activitymaster.core.services.dto.ISystems;
 import com.guicedee.activitymaster.core.threads.TransactionalIdentifiedThread;
 import com.guicedee.activitymaster.mail.MailSystem;
 import com.guicedee.activitymaster.mail.implementations.MailboxBoxService;
@@ -12,15 +13,13 @@ import com.guicedee.activitymaster.mail.servers.SaNrgMailServer;
 import com.guicedee.activitymaster.mail.services.IMailImportService;
 import com.guicedee.activitymaster.mail.services.dto.MailFoldersStatus;
 import com.guicedee.activitymaster.mail.services.dto.MailImportTicket;
+import com.guicedee.guicedinjection.GuiceContext;
 import com.sun.mail.imap.IMAPFolder;
 
 import javax.mail.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -66,16 +65,16 @@ public class MailImportRunThread
 		configure();
 	}
 
-	public MailImportRunThread()
-	{
-	}
-
 	public void configure()
 	{
 		this.source = new MailboxBoxService(new GMailMailServer(ticket.getGmailAddress(), ticket.getGmailPassword()));
 		this.dest = new MailboxBoxService(new SaNrgMailServer(ticket.getSanrgMailAddress(), ticket.getSanrgMailPassword()));
 		this.startMail = ticket.getCompletedMails() + 1;
 		this.currentFolder = ticket.getCurrentFolder();
+	}
+
+	public MailImportRunThread()
+	{
 	}
 
 	@SuppressWarnings("unchecked")
@@ -102,26 +101,6 @@ public class MailImportRunThread
 			ticket.setTotalSizeForToday(currentSize);
 			get(IMailImportService.class)
 					.updateMailImportTicket(ticket, enterprise);
-		}
-	}
-
-	private void goThrough(Map<String, String> folderMappings) throws MessagingException
-	{
-		String prefix = "";
-		for (Map.Entry<String, String> entry : folderMappings
-				                                       .entrySet())
-		{
-			String a = entry.getKey();
-			String b = entry.getValue();
-
-			if (!a.equals(currentFolder))
-			{
-				continue;
-			}
-
-			this.prefix = prefix;
-			this.currentSourceFolderName = a;
-			runIt(dest, source, folderMappings);
 		}
 	}
 
@@ -245,10 +224,13 @@ public class MailImportRunThread
 			String key = entry.getKey();
 			String value = entry.getValue();
 			MailFoldersStatus foldersStatus = new MailFoldersStatus();
-			List objects = arrangement.findAll(FolderStatusObject, key, MailSystem.getSystemsMap()
-			                                                                      .get(arrangement.getEnterpriseID()),
-			                                   MailSystem.getSystemTokens()
-			                                             .get(arrangement.getEnterpriseID()));
+			UUID identity = GuiceContext.get(MailSystem.class)
+			                            .getSystemToken(enterprise);
+			ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
+			                                     .getSystem(enterprise);
+
+			List objects = arrangement.findAll(FolderStatusObject, key, mailSystem,
+			                                   identity);
 
 			for (Object object : objects)
 			{
@@ -259,18 +241,34 @@ public class MailImportRunThread
 				                                                                                         foldersStatus.toString()
 				                                                                                                      .getBytes(),
 				                                                                                         "application/json",
-				                                                                                         MailSystem.getSystemsMap()
-				                                                                                                   .get(arrangement.getEnterpriseID()),
-				                                                                                         MailSystem.getSystemTokens()
-				                                                                                                   .get(arrangement.getEnterpriseID()
-				                                                                                                       ));
+				                                                                                         mailSystem,
+				                                                                                         identity);
 				System.out.println("Stuff");
 
 			}
 
-
 		}
 		return folderMappings;
+	}
+
+	private void goThrough(Map<String, String> folderMappings) throws MessagingException
+	{
+		String prefix = "";
+		for (Map.Entry<String, String> entry : folderMappings
+				                                       .entrySet())
+		{
+			String a = entry.getKey();
+			String b = entry.getValue();
+
+			if (!a.equals(currentFolder))
+			{
+				continue;
+			}
+
+			this.prefix = prefix;
+			this.currentSourceFolderName = a;
+			runIt(dest, source, folderMappings);
+		}
 	}
 
 	private void runIt(MailboxBoxService dest, MailboxBoxService src, Map<String, String> folderMappings) throws MessagingException
@@ -340,50 +338,14 @@ public class MailImportRunThread
 		return this.ticket;
 	}
 
-	public IEnterpriseName<?> getEnterprise()
-	{
-		return this.enterprise;
-	}
-
-	public MailboxBoxService getSource()
-	{
-		return this.source;
-	}
-
-	public MailboxBoxService getDest()
-	{
-		return this.dest;
-	}
-
-
-	public long getMaxMails()
-	{
-		return this.maxMails;
-	}
-
-	public long getMaxSize()
-	{
-		return this.maxSize;
-	}
-
-	public long getStartMail()
-	{
-		return this.startMail;
-	}
-
-	public long getCurrentSize()
-	{
-		return this.currentSize;
-	}
-
-	public long getCurrentMails()
-	{
-		return this.currentMails;
-	}
-
 	public void setTicket(MailImportTicket ticket)
 	{
 		this.ticket = ticket;
+	}
+
+	public IEnterpriseName<?> getEnterprise()
+	{
+		return this.enterprise;
 	}
 
 	public void setEnterprise(IEnterpriseName<?> enterprise)
@@ -391,9 +353,19 @@ public class MailImportRunThread
 		this.enterprise = enterprise;
 	}
 
+	public MailboxBoxService getSource()
+	{
+		return this.source;
+	}
+
 	public void setSource(MailboxBoxService source)
 	{
 		this.source = source;
+	}
+
+	public MailboxBoxService getDest()
+	{
+		return this.dest;
 	}
 
 	public void setDest(MailboxBoxService dest)
@@ -401,9 +373,19 @@ public class MailImportRunThread
 		this.dest = dest;
 	}
 
+	public long getMaxMails()
+	{
+		return this.maxMails;
+	}
+
 	public void setMaxMails(long maxMails)
 	{
 		this.maxMails = maxMails;
+	}
+
+	public long getMaxSize()
+	{
+		return this.maxSize;
 	}
 
 	public void setMaxSize(long maxSize)
@@ -411,14 +393,29 @@ public class MailImportRunThread
 		this.maxSize = maxSize;
 	}
 
+	public long getStartMail()
+	{
+		return this.startMail;
+	}
+
 	public void setStartMail(long startMail)
 	{
 		this.startMail = startMail;
 	}
 
+	public long getCurrentSize()
+	{
+		return this.currentSize;
+	}
+
 	public void setCurrentSize(long currentSize)
 	{
 		this.currentSize = currentSize;
+	}
+
+	public long getCurrentMails()
+	{
+		return this.currentMails;
 	}
 
 	public void setCurrentMails(long currentMails)
@@ -431,6 +428,12 @@ public class MailImportRunThread
 		return currentFolder;
 	}
 
+	public MailImportRunThread setCurrentFolder(String currentFolder)
+	{
+		this.currentFolder = currentFolder;
+		return this;
+	}
+
 	public IArrangement<?> getArrangement()
 	{
 		return arrangement;
@@ -439,12 +442,6 @@ public class MailImportRunThread
 	public MailImportRunThread setArrangement(IArrangement<?> arrangement)
 	{
 		this.arrangement = arrangement;
-		return this;
-	}
-
-	public MailImportRunThread setCurrentFolder(String currentFolder)
-	{
-		this.currentFolder = currentFolder;
 		return this;
 	}
 }

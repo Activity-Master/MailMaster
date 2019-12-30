@@ -1,6 +1,5 @@
 package com.guicedee.activitymaster.mail.implementations;
 
-
 import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnterpriseName;
 import com.guicedee.activitymaster.core.services.dto.*;
 import com.guicedee.activitymaster.core.services.enumtypes.IIdentificationType;
@@ -17,12 +16,12 @@ import com.guicedee.activitymaster.mail.services.IMailBoxService;
 import com.guicedee.activitymaster.mail.services.IMailService;
 import com.guicedee.activitymaster.mail.services.classifications.MailSystemClassifications;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
-import com.guicedee.activitymaster.profiles.webdto.UserLoginDTO;
-import com.guicedee.activitymaster.profiles.webdto.UserRegistrationDTO;
 import com.guicedee.activitymaster.profiles.exceptions.ProfileServiceException;
 import com.guicedee.activitymaster.profiles.exceptions.UserExistsException;
 import com.guicedee.activitymaster.profiles.exceptions.WaitingForConfirmationKeyException;
 import com.guicedee.activitymaster.profiles.services.interfaces.IRolesService;
+import com.guicedee.activitymaster.profiles.webdto.UserLoginDTO;
+import com.guicedee.activitymaster.profiles.webdto.UserRegistrationDTO;
 import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.guicedinjection.pairing.Pair;
 
@@ -60,20 +59,19 @@ public class MailService
 		                                        .getEnterprise(enterpriseName);
 
 		profileServiceDTO.setEnterprise(enterpriseName);
-
-		ISystems profileSystem = MailSystem.getSystemsMap()
-		                                   .get(enterprise);
-		UUID profileSystemUUID = MailSystem.getSystemTokens()
-		                                   .get(enterprise);
+		UUID identity = GuiceContext.get(MailSystem.class)
+		                            .getSystemToken(enterpriseName);
+		ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
+		                                     .getSystem(enterpriseName);
 
 		if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null)
 		{
-			identityToken = new UUID[]{profileSystemUUID};
+			identityToken = new UUID[]{identity};
 		}
 
 		IInvolvedParty<?> newIp = involvedPartyService.findByIdentificationType(IdentificationTypeWebClientUUID,
 		                                                                        profileServiceDTO.getWebClientUUID()
-		                                                                                         .toString(), profileSystem, profileSystemUUID);
+		                                                                                         .toString(), mailSystem, identity);
 
 		try (IMailBoxService<?> service = IMailBoxService.get(new SaNrgMailServer(profileServiceDTO.getUserName(), profileServiceDTO.getPassword())))
 		{
@@ -81,8 +79,8 @@ public class MailService
 
 			IMailService<?> mailService = get(IMailService.class);
 			IInvolvedParty<?> foundParty = mailService.findByEmail(profileServiceDTO.getUserName(),
-			                                                       profileSystem,
-			                                                       profileSystemUUID);
+			                                                       mailSystem,
+			                                                       identity);
 
 			if (foundParty == null)
 			{
@@ -101,17 +99,17 @@ public class MailService
 				foundParty.addOrUpdate(IdentificationTypeWebClientUUID,
 				                       profileServiceDTO.getWebClientUUID()
 				                                        .toString(),
-				                       profileSystem, profileSystemUUID);
-				newIp.archive(IdentificationTypeWebClientUUID, profileSystem, profileSystemUUID);
+				                       mailSystem, identity);
+				newIp.archive(IdentificationTypeWebClientUUID, mailSystem, identity);
 				newIp = foundParty;
 			}
-			newIp.addOrUpdate(LoggedOn, "true", profileSystem, profileSystemUUID);
+			newIp.addOrUpdate(LoggedOn, "true", mailSystem, identity);
 
 			//newIp.addOrUpdate(RememberMe, profileServiceDTO.isRememberMe() + "", profileSystem, profileSystemUUID);
-			if (newIp.has(IdentificationTypeEnterpriseCreatorRole, profileSystem, profileSystemUUID))
+			if (newIp.has(IdentificationTypeEnterpriseCreatorRole, mailSystem, identity))
 			{
-				get(IRolesService.class).addRole(newIp,Administrator, profileServiceDTO, profileSystem, identityToken);
-				get(IRolesService.class).addRole(newIp,MailAdministrator, profileServiceDTO, profileSystem, identityToken);
+				get(IRolesService.class).addRole(newIp, Administrator, profileServiceDTO, mailSystem, identityToken);
+				get(IRolesService.class).addRole(newIp, MailAdministrator, profileServiceDTO, mailSystem, identityToken);
 			}
 		}
 		catch (Exception e)
@@ -123,11 +121,11 @@ public class MailService
 
 		if (profileServiceDTO.isRememberMe())
 		{
-			newIp.addOrUpdate(RememberMe, "true", profileSystem, profileSystemUUID);
+			newIp.addOrUpdate(RememberMe, "true", mailSystem, identity);
 		}
 		else
 		{
-			newIp.addOrUpdate(RememberMe, "false", profileSystem, profileSystemUUID);
+			newIp.addOrUpdate(RememberMe, "false", mailSystem, identity);
 		}
 		profileServiceDTO.findRoles();
 		return profileServiceDTO;
@@ -139,33 +137,32 @@ public class MailService
 		IEnterprise<?> enterprise = GuiceContext.get(IEnterpriseService.class)
 		                                        .getEnterprise(enterpriseName);
 
-		ISystems profileSystem = MailSystem.getSystemsMap()
-		                                   .get(enterprise);
-		UUID profileSystemUUID = MailSystem.getSystemTokens()
-		                                   .get(enterprise);
+		UUID identity = GuiceContext.get(MailSystem.class)
+		                            .getSystemToken(enterpriseName);
+		ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
+		                                     .getSystem(enterpriseName);
 
 		IEvent<?> registerEvent = GuiceContext.get(IEventService.class)
-		                                      .createEvent(UserRegistered, profileSystem, profileSystemUUID);
+		                                      .createEvent(UserRegistered, mailSystem, identity);
 
 		IInvolvedParty<?> ipExists = involvedPartyService.findByIdentificationType(IdentificationTypeEmailAddress,
 		                                                                           new Passwords().integerEncrypt(userRegistrationDTO.getUserName()
-		                                                                                                                       .getBytes())
-				, profileSystem, profileSystemUUID);
+		                                                                                                                             .getBytes())
+				, mailSystem, identity);
 		if (ipExists != null)
 		{
-			if (ipExists.has(ConfirmationKey, profileSystem, identityToken))
+			if (ipExists.has(ConfirmationKey, mailSystem, identityToken))
 			{
 				throw new WaitingForConfirmationKeyException("The email address is waiting for a confirmation key");
 			}
 			throw new UserExistsException("That email address is already in use as a valid identifier");
 		}
 		IInvolvedParty<?> newIp;
-		newIp = createNewVisitor(registerEvent, userRegistrationDTO, profileSystem.getEnterpriseID(), profileSystem, profileSystemUUID);
-		newIp.add(MailSystemClassifications.UseMailForLogin, "true", profileSystem, profileSystemUUID);
+		newIp = createNewVisitor(registerEvent, userRegistrationDTO, mailSystem.getEnterpriseID(), mailSystem, identity);
+		newIp.add(MailSystemClassifications.UseMailForLogin, "true", mailSystem, identity);
 
 		return newIp;
 	}
-
 
 	IInvolvedParty<?> createNewVisitor(IEvent<?> event, UserRegistrationDTO<?> profileServiceDTO, IEnterprise<?> enterprise, ISystems<?> profileSystem, UUID... identityToken)
 	{
@@ -175,7 +172,7 @@ public class MailService
 		Pair<IIdentificationType<?>, String> guestIDType = new Pair<>();
 		guestIDType.setKey(IdentificationTypeEmailAddress)
 		           .setValue(new Passwords().integerEncrypt(profileServiceDTO.getUserName()
-		                                                               .getBytes()));
+		                                                                     .getBytes()));
 
 		profileServiceDTO.setWebClientUUID(UUID.randomUUID());
 
@@ -186,15 +183,15 @@ public class MailService
 
 		ISecurityToken<?> myToken = get(ISecurityTokenService.class).create(Identity,
 		                                                                    new Passwords().integerEncrypt(profileServiceDTO.getUserName()
-		                                                                                                             .getBytes()),
-		                                                                   "An agent registration",
-		                                                                   profileSystem,
-		                                                                   visitorsGroup,
-		                                                                   identityToken);
+		                                                                                                                    .getBytes()),
+		                                                                    "An agent registration",
+		                                                                    profileSystem,
+		                                                                    visitorsGroup,
+		                                                                    identityToken);
 
 		newIp.addOrUpdate(IdentificationTypeUUID, myToken.getSecurityToken(), profileSystem, identityToken);
 		newIp.addOrUpdate(IdentificationTypeUserName, new Passwords().integerEncrypt(profileServiceDTO.getUserName()
-		                                                                                        .getBytes())
+		                                                                                              .getBytes())
 				, profileSystem, identityToken);
 
 		newIp.addOrReuse(PreferredNameType, "Agent", profileSystem, identityToken);
@@ -203,10 +200,12 @@ public class MailService
 		                                   .toString(), profileSystem, identityToken);
 
 		profileServiceDTO.setIdentityToken(java.util.UUID.fromString(myToken.getSecurityToken()));
-		UUID profileSystemUUID = MailSystem.getSystemTokens()
-		                                   .get(enterprise);
+		UUID identity = GuiceContext.get(MailSystem.class)
+		                            .getSystemToken(enterprise);
+		ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
+		                                     .getSystem(enterprise);
 
-		get(IRolesService.class).addRole(newIp,MailUserRoles.MailUser, profileServiceDTO, profileSystem, profileSystemUUID);
+		get(IRolesService.class).addRole(newIp, MailUserRoles.MailUser, profileServiceDTO, profileSystem, identity);
 
 		return newIp;
 	}
