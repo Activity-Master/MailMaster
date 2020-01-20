@@ -60,7 +60,7 @@ public class MailImportService
 				}
 				MailImportTicket ticket = new MailImportTicket();
 
-				List<Object[]> rows = arrangement.getValues(MailImport, null, mailSystem, uuid
+				List<Object[]> rows = arrangement.getValues(MailImport, null, mailSystem, new UUID[]{uuid}
 						, CurrentFolderImport
 						, CompletedFolderImport
 						, CompletedMailImport
