@@ -20,7 +20,7 @@ module com.guicedee.activitymaster.mail {
 
 	requires com.guicedee.guicedinjection;
 	requires com.google.common;
-	requires javax.servlet.api;
+	requires java.servlet;
 	requires com.fasterxml.jackson.annotation;
 	requires com.fasterxml.jackson.databind;
 
@@ -36,7 +36,7 @@ module com.guicedee.activitymaster.mail {
 	exports com.guicedee.activitymaster.mail.services.dto;
 
 	opens com.guicedee.activitymaster.mail.services.dto to com.fasterxml.jackson.databind;
-	opens com.guicedee.activitymaster.mail.implementations to com.fasterxml.jackson.databind,com.google.guice;
+	opens com.guicedee.activitymaster.mail.implementations to com.fasterxml.jackson.databind, com.google.guice;
 	exports com.guicedee.activitymaster.mail.importer;
 	exports com.guicedee.activitymaster.mail.threads;
 	exports com.guicedee.activitymaster.mail.roles;
