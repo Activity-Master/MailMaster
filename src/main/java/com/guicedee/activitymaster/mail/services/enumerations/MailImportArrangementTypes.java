@@ -35,4 +35,9 @@ public enum MailImportArrangementTypes implements IArrangementTypes<MailImportAr
 		return classificationValue;
 	}
 
+	@Override
+	public IClassificationDataConceptValue<?> concept() {
+		return ArrangementType;
+	}
+
 }

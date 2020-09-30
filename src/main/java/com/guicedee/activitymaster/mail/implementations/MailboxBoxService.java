@@ -18,10 +18,12 @@ import com.sun.mail.imap.IMAPFolder;
 import javax.mail.*;
 import java.io.Closeable;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.guicedee.activitymaster.mail.services.classifications.MailSystemClassifications.MailImportFor;
 import static com.guicedee.activitymaster.mail.services.enumerations.MailImportArrangementTypes.*;
 
 public class MailboxBoxService
@@ -133,7 +135,7 @@ public class MailboxBoxService
 		                                     .getSystem(ip.getEnterprise());
 
 		IArrangementsService<?> arrangementsService = GuiceContext.get(IArrangementsService.class);
-		IArrangement<?> a = arrangementsService.create(MailImport, value, mailSystem, identityToken);
+		IArrangement<?> a = arrangementsService.create(MailImport,MailImportFor,value, mailSystem, LocalDateTime.now(), identityToken);
 		a.add(ip, MailSystemClassifications.MailImport, value, mailSystem, identity);
 
 		return a;
