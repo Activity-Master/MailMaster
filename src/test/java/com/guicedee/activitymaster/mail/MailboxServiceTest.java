@@ -2,7 +2,7 @@ package com.guicedee.activitymaster.mail;
 
 import org.junit.jupiter.api.Test;
 
-import javax.mail.*;
+import jakarta.mail.*;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -26,7 +26,7 @@ class MailboxServiceTest
 		props.put("mail.imap.timeout", 10);
 		props.put("mail.imap.starttls.enable", true);
 
-		Session session = javax.mail.Session.getInstance(props, null);
+		Session session = jakarta.mail.Session.getInstance(props, null);
 		Store store = session.getStore("imaps");
 		store.connect(host, username, password);
 

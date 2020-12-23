@@ -12,7 +12,7 @@ import com.jwebmp.logger.logging.LogColourFormatter;
 import lombok.extern.java.Log;
 import org.junit.jupiter.api.Test;
 
-import javax.mail.MessagingException;
+import jakarta.mail.MessagingException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Level;

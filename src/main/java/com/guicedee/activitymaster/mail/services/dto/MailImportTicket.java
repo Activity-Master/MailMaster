@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.Objects;
+import java.util.UUID;
 
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.*;
 
@@ -15,8 +16,7 @@ import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.*;
 @JsonAutoDetect(fieldVisibility = ANY,getterVisibility = NONE,setterVisibility = NONE)
 public class MailImportTicket
 {
-	@JsonFormat(shape = JsonFormat.Shape.STRING)
-	private long arrangementId;
+	private UUID arrangementId;
 	private String sanrgMailAddress;
 	private String sanrgMailPassword;
 	private String gmailAddress;
@@ -46,12 +46,12 @@ public class MailImportTicket
 	{
 	}
 
-	public long getArrangementId()
+	public UUID getArrangementId()
 	{
 		return arrangementId;
 	}
 
-	public MailImportTicket setArrangementId(long arrangementId)
+	public MailImportTicket setArrangementId(UUID arrangementId)
 	{
 		this.arrangementId = arrangementId;
 		return this;

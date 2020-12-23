@@ -20,7 +20,7 @@ module com.guicedee.activitymaster.mail {
 
 	requires com.guicedee.guicedinjection;
 	requires com.google.common;
-	requires java.servlet;
+
 	requires com.fasterxml.jackson.annotation;
 	requires com.fasterxml.jackson.databind;
 

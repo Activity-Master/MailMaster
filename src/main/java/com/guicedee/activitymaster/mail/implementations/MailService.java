@@ -180,7 +180,7 @@ public class MailService
                 , profileSystem.getEnterprise(), identityToken);
 
         newIp.addOrReuseNameType(PreferredNameType,(IClassification)null, "Agent", enterprise, identityToken);
-        newIp.addOrReuse(CreatedBy, Long.toString(newIp.getId()), profileSystem, identityToken);
+        newIp.addOrReuse(CreatedBy, newIp.getId().toString(), profileSystem, identityToken);
         event.addOrReuse(PerformedBy, newIp.getSecurityIdentity()
                 .toString(), profileSystem, identityToken);
 

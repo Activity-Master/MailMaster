@@ -16,7 +16,7 @@ import com.guicedee.activitymaster.mail.services.dto.MailImportTicket;
 import com.guicedee.guicedinjection.GuiceContext;
 import com.sun.mail.imap.IMAPFolder;
 
-import javax.mail.*;
+import jakarta.mail.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;

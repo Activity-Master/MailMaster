@@ -2,10 +2,10 @@ package com.guicedee.activitymaster.mail.importer;
 
 import com.guicedee.activitymaster.mail.implementations.MailboxBoxService;
 
-import javax.mail.Folder;
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.UIDFolder;
+import jakarta.mail.Folder;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.UIDFolder;
 
 public class MessageImportJob
 		implements Runnable

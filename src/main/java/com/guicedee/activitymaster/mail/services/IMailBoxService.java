@@ -7,8 +7,8 @@ import com.guicedee.activitymaster.core.services.dto.ISystems;
 import com.guicedee.activitymaster.mail.implementations.MailboxBoxService;
 import com.guicedee.activitymaster.mail.servers.MailServer;
 
-import javax.mail.Folder;
-import javax.mail.MessagingException;
+import jakarta.mail.Folder;
+import jakarta.mail.MessagingException;
 import java.io.Closeable;
 import java.util.List;
 import java.util.UUID;

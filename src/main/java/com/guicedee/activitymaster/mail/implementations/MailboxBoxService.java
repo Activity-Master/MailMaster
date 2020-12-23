@@ -15,7 +15,7 @@ import com.guicedee.activitymaster.mail.services.classifications.MailSystemClass
 import com.guicedee.guicedinjection.GuiceContext;
 import com.sun.mail.imap.IMAPFolder;
 
-import javax.mail.*;
+import jakarta.mail.*;
 import java.io.Closeable;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -457,10 +457,10 @@ public class MailboxBoxService
 	}
 
 	private class PasswordAuthenticator
-			extends javax.mail.Authenticator
+			extends jakarta.mail.Authenticator
 	{
 		@Override
-		public javax.mail.PasswordAuthentication getPasswordAuthentication()
+		public jakarta.mail.PasswordAuthentication getPasswordAuthentication()
 		{
 			return new PasswordAuthentication(server.getUsername(), server.getPassword());
 		}
