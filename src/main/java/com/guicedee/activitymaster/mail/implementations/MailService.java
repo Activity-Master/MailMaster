@@ -27,7 +27,6 @@ import com.guicedee.guicedinjection.pairing.Pair;
 
 import java.util.UUID;
 
-import static com.guicedee.activitymaster.core.services.classifications.classification.Classifications.NoClassification;
 import static com.guicedee.activitymaster.core.services.classifications.events.EventInvolvedPartiesClassifications.*;
 import static com.guicedee.activitymaster.core.services.classifications.securitytokens.SecurityTokenClassifications.*;
 import static com.guicedee.activitymaster.core.services.types.IdentificationTypes.*;
@@ -94,14 +93,14 @@ public class MailService
                         = foundParty.addOrUpdateIdentificationType(IdentificationTypeWebClientUUID,
                         profileServiceDTO.getWebClientUUID()
                                 .toString(),
-                        mailSystem.getEnterprise(), identity);
+                        mailSystem, identity);
                 newIp.archiveIdentificationType(orUpdateIdentificationType, identity);
                 newIp = foundParty;
             }
             newIp.addOrUpdate(LoggedOn, "true", mailSystem, identity);
 
             //newIp.addOrUpdate(RememberMe, profileServiceDTO.isRememberMe() + "", profileSystem, profileSystemUUID);
-            if (newIp.hasIdentificationType(IdentificationTypeEnterpriseCreatorRole,null, mailSystem.getEnterprise(), identity)) {
+            if (newIp.hasIdentificationType(IdentificationTypeEnterpriseCreatorRole,null, mailSystem, identity)) {
                 get(IRolesService.class).addRole(newIp, Administrator, profileServiceDTO, mailSystem, identityToken);
                 get(IRolesService.class).addRole(newIp, MailAdministrator, profileServiceDTO, mailSystem, identityToken);
             }
@@ -138,7 +137,7 @@ public class MailService
                         .getBytes())
                 , mailSystem, identity);
         if (ipExists != null) {
-            if (ipExists.has(ConfirmationKey, mailSystem, identityToken)) {
+            if (ipExists.hasResourceItems(ConfirmationKey, mailSystem, identityToken)) {
                 throw new WaitingForConfirmationKeyException("The email address is waiting for a confirmation key");
             }
             throw new UserExistsException("That email address is already in use as a valid identifier");
@@ -174,12 +173,12 @@ public class MailService
                 visitorsGroup,
                 identityToken);
 
-        newIp.addOrUpdateIdentificationType(IdentificationTypeUUID,(IClassification)null, myToken.getSecurityToken(), profileSystem.getEnterprise(), identityToken);
+        newIp.addOrUpdateIdentificationType(IdentificationTypeUUID,(IClassification)null, myToken.getSecurityToken(), profileSystem, identityToken);
         newIp.addOrUpdateIdentificationType(IdentificationTypeUserName, (IClassification)null, new Passwords().integerEncrypt(profileServiceDTO.getUserName()
                         .getBytes())
-                , profileSystem.getEnterprise(), identityToken);
+                , profileSystem, identityToken);
 
-        newIp.addOrReuseNameType(PreferredNameType,(IClassification)null, "Agent", enterprise, identityToken);
+        newIp.addOrReuseNameType(PreferredNameType,(IClassification)null, "Agent", profileSystem, identityToken);
         newIp.addOrReuse(CreatedBy, newIp.getId().toString(), profileSystem, identityToken);
         event.addOrReuse(PerformedBy, newIp.getSecurityIdentity()
                 .toString(), profileSystem, identityToken);

@@ -54,7 +54,7 @@ public class MailImportService
 		{
 			for (IArrangement<?> arrangement : arrangements)
 			{
-				if (!arrangement.has(MailSystemClassifications.MailImport, mailSystem, uuid))
+				if (!arrangement.hasResourceItems(MailSystemClassifications.MailImport, mailSystem, uuid))
 				{
 					continue;
 				}
