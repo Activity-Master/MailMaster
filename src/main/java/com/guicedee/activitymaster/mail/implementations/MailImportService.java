@@ -237,7 +237,7 @@ public class MailImportService
 		                        .getSystemToken(enterpriseName);
 		ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
 		                                     .getSystem(enterpriseName);
-		IArrangement<?> arrangement = get(IArrangementsService.class).find(mailImportTicket.getArrangementId(), mailSystem.getEnterpriseID(), uuid);
+		IArrangement<?> arrangement = get(IArrangementsService.class).find(mailImportTicket.getArrangementId(), mailSystem, uuid);
 
 		arrangement.addOrUpdate(ConfirmedSourceMailImport, "" + mailImportTicket.isGmailChecked(), mailSystem);
 		arrangement.addOrUpdate(ConfirmedDestinationMailImport, "" + mailImportTicket.isSanrgChecked(), mailSystem);

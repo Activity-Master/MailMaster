@@ -163,7 +163,7 @@ public class MailService
         newIp = involvedPartyService.create(profileSystem, guestIDType, true, identityToken);
 
         ISecurityToken<?> visitorsGroup = GuiceContext.get(ISecurityTokenService.class)
-                .getRegisteredGuestsFolder(enterprise, identityToken);
+                .getRegisteredGuestsFolder(profileSystem, identityToken);
 
         ISecurityToken<?> myToken = get(ISecurityTokenService.class).create(Identity,
                 new Passwords().integerEncrypt(profileServiceDTO.getUserName()

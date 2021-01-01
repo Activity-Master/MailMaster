@@ -191,7 +191,7 @@ public class MailImportRunThread
             ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
                     .getSystem(enterprise);
 
-            List objects = arrangement.findResourceItemsAll(FolderStatusObject.toString(), key,false, mailSystem.getEnterprise(),identity);
+            List objects = arrangement.findResourceItemsAll(FolderStatusObject.toString(), key,false, mailSystem,identity);
 
             for (Object object : objects) {
 

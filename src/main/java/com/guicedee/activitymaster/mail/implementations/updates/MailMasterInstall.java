@@ -47,7 +47,7 @@ public class MailMasterInstall implements ISystemUpdate
 		
 		try
 		{
-			classificationService.find(MailImport, enterprise, token);
+			classificationService.find(MailImport, system, token);
 		}
 		catch (Exception e)
 		{
