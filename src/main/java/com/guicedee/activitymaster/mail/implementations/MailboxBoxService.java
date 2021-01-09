@@ -135,7 +135,7 @@ public class MailboxBoxService
 		                                     .getSystem(ip.getEnterprise());
 
 		IArrangementsService<?> arrangementsService = GuiceContext.get(IArrangementsService.class);
-		IArrangement<?> a = arrangementsService.create(MailImport,MailImportFor,value, mailSystem, LocalDateTime.now(), identityToken);
+		IArrangement<?> a = arrangementsService.create(MailImport,MailImportFor,value, mailSystem, identityToken);
 		a.addInvolvedParty(ip, MailSystemClassifications.MailImport, value, mailSystem, identity);
 
 		return a;
