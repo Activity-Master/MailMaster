@@ -23,7 +23,8 @@ module com.guicedee.activitymaster.mail {
 
 	requires com.fasterxml.jackson.annotation;
 	requires com.fasterxml.jackson.databind;
-
+	requires com.guicedee.activitymaster.sessions;
+	
 	provides com.guicedee.activitymaster.core.services.IActivityMasterSystem with com.guicedee.activitymaster.mail.MailSystem;
 	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with com.guicedee.activitymaster.mail.implementations.MailMasterBinder;
 

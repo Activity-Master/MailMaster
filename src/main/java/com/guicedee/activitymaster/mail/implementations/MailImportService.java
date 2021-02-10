@@ -45,9 +45,9 @@ public class MailImportService
 		IEnterprise<?> enterprise = get(IEnterpriseService.class)
 				                            .getEnterprise(enterpriseName);
 		UUID uuid = GuiceContext.get(MailSystem.class)
-		                        .getSystemToken(enterpriseName);
+		                        .getSystemToken(enterpriseName.name());
 		ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
-		                                     .getSystem(enterpriseName);
+		                                     .getSystem(enterpriseName.name());
 
 		List<MailImportTicket> tickets = new ArrayList<>();
 		if (arrangements != null)
@@ -218,13 +218,13 @@ public class MailImportService
 	@Override
 	public ISystems<?> getSystem(IEnterpriseName<?> enterpriseName)
 	{
-		return get(MailSystem.class).getSystem(enterpriseName);
+		return get(MailSystem.class).getSystem(enterpriseName.name());
 	}
 
 	@Override
 	public UUID getSystemUUID(IEnterpriseName<?> enterpriseName)
 	{
-		return get(MailSystem.class).getSystemToken(enterpriseName);
+		return get(MailSystem.class).getSystemToken(enterpriseName.name());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -234,9 +234,9 @@ public class MailImportService
 		IEnterprise<?> enterprise = get(IEnterpriseService.class)
 				                            .getEnterprise(enterpriseName);
 		UUID uuid = GuiceContext.get(MailSystem.class)
-		                        .getSystemToken(enterpriseName);
+		                        .getSystemToken(enterpriseName.name());
 		ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
-		                                     .getSystem(enterpriseName);
+		                                     .getSystem(enterpriseName.name());
 		IArrangement<?> arrangement = get(IArrangementsService.class).find(mailImportTicket.getArrangementId(), mailSystem, uuid);
 
 		arrangement.addOrUpdate(ConfirmedSourceMailImport, "" + mailImportTicket.isGmailChecked(), mailSystem);
@@ -261,9 +261,9 @@ public class MailImportService
 		IEnterprise<?> enterprise = get(IEnterpriseService.class)
 				                            .getEnterprise(enterpriseName);
 		UUID identity = GuiceContext.get(MailSystem.class)
-		                            .getSystemToken(enterpriseName);
+		                            .getSystemToken(enterpriseName.name());
 		ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
-		                                     .getSystem(enterpriseName);
+		                                     .getSystem(enterpriseName.name());
 
 		IArrangementsService<?> arrangementsService = get(IArrangementsService.class);
 		List output = arrangement.getValues((IResourceItemClassification<?>) FolderStatusObject, foldersStatus.getFolderName(), mailSystem, identity);

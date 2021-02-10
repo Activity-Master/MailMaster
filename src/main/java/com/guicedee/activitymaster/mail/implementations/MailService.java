@@ -20,7 +20,7 @@ import com.guicedee.activitymaster.profiles.exceptions.ProfileServiceException;
 import com.guicedee.activitymaster.profiles.exceptions.UserExistsException;
 import com.guicedee.activitymaster.profiles.exceptions.WaitingForConfirmationKeyException;
 import com.guicedee.activitymaster.profiles.services.interfaces.IRolesService;
-import com.guicedee.activitymaster.profiles.webdto.UserLoginDTO;
+import com.guicedee.activitymaster.profiles.dto.UserLoginDTO;
 import com.guicedee.activitymaster.profiles.webdto.UserRegistrationDTO;
 import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.guicedinjection.pairing.Pair;
@@ -57,9 +57,9 @@ public class MailService
 
         profileServiceDTO.setEnterprise(enterpriseName);
         UUID identity = GuiceContext.get(MailSystem.class)
-                .getSystemToken(enterpriseName);
+                .getSystemToken(enterpriseName.name());
         ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
-                .getSystem(enterpriseName);
+                .getSystem(enterpriseName.name());
 
         if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null) {
             identityToken = new UUID[]{identity};
@@ -87,7 +87,7 @@ public class MailService
                 foundParty = registerVisitor(newDto, enterpriseName, identityToken);
             }
 
-            profileServiceDTO.setIdentityToken(foundParty.getSecurityIdentity());
+            profileServiceDTO.setIdentityToken(foundParty.getId());
             if (!newIp.equals(foundParty)) {
                 var orUpdateIdentificationType
                         = foundParty.addOrUpdateIdentificationType(IdentificationTypeWebClientUUID,
@@ -101,8 +101,8 @@ public class MailService
 
             //newIp.addOrUpdate(RememberMe, profileServiceDTO.isRememberMe() + "", profileSystem, profileSystemUUID);
             if (newIp.hasIdentificationType(IdentificationTypeEnterpriseCreatorRole,null, mailSystem, identity)) {
-                get(IRolesService.class).addRole(newIp, Administrator, profileServiceDTO, mailSystem, identityToken);
-                get(IRolesService.class).addRole(newIp, MailAdministrator, profileServiceDTO, mailSystem, identityToken);
+                get(IRolesService.class).addRole(newIp, Administrator.toString(), profileServiceDTO, mailSystem, identityToken);
+                get(IRolesService.class).addRole(newIp, MailAdministrator.toString(), profileServiceDTO, mailSystem, identityToken);
             }
         } catch (Exception e) {
             throw new SecurityAccessException("Invalid username or password", e);
@@ -125,9 +125,9 @@ public class MailService
                 .getEnterprise(enterpriseName);
 
         UUID identity = GuiceContext.get(MailSystem.class)
-                .getSystemToken(enterpriseName);
+                .getSystemToken(enterpriseName.name());
         ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
-                .getSystem(enterpriseName);
+                .getSystem(enterpriseName.name());
 
         IEvent<?> registerEvent = GuiceContext.get(IEventService.class)
                 .createEvent(UserRegistered, mailSystem, identity);
@@ -183,13 +183,13 @@ public class MailService
         event.addOrReuse(PerformedBy, newIp.getSecurityIdentity()
                 .toString(), profileSystem, identityToken);
 
-        profileServiceDTO.setIdentityToken(java.util.UUID.fromString(myToken.getSecurityToken()));
+        profileServiceDTO.setIdentityToken(newIp.getId());
         UUID identity = GuiceContext.get(MailSystem.class)
                 .getSystemToken(enterprise);
         ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
                 .getSystem(enterprise);
 
-        get(IRolesService.class).addRole(newIp, MailUserRoles.MailUser, profileServiceDTO, profileSystem, identity);
+        get(IRolesService.class).addRole(newIp, MailUserRoles.MailUser.toString(), profileServiceDTO, profileSystem, identity);
 
         return newIp;
     }

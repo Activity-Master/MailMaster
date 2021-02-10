@@ -187,9 +187,9 @@ public class MailImportRunThread
             String value = entry.getValue();
             MailFoldersStatus foldersStatus = new MailFoldersStatus();
             UUID identity = GuiceContext.get(MailSystem.class)
-                    .getSystemToken(enterprise);
+                    .getSystemToken(enterprise.name());
             ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
-                    .getSystem(enterprise);
+                    .getSystem(enterprise.name());
 
             List objects = arrangement.findResourceItemsAll(FolderStatusObject.toString(), key,false, mailSystem,identity);
 
