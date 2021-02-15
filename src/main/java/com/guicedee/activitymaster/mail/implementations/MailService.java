@@ -20,8 +20,9 @@ import com.guicedee.activitymaster.profiles.exceptions.ProfileServiceException;
 import com.guicedee.activitymaster.profiles.exceptions.UserExistsException;
 import com.guicedee.activitymaster.profiles.exceptions.WaitingForConfirmationKeyException;
 import com.guicedee.activitymaster.profiles.services.interfaces.IRolesService;
-import com.guicedee.activitymaster.profiles.dto.UserLoginDTO;
+
 import com.guicedee.activitymaster.profiles.webdto.UserRegistrationDTO;
+import com.guicedee.activitymaster.sessions.services.dto.UserLoginDTO;
 import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.guicedinjection.pairing.Pair;
 

@@ -1,31 +1,30 @@
 package com.guicedee.activitymaster.mail;
 
-import com.google.inject.Singleton;
+import com.google.inject.*;
 import com.guicedee.activitymaster.core.services.IActivityMasterProgressMonitor;
 import com.guicedee.activitymaster.core.services.IActivityMasterSystem;
 import com.guicedee.activitymaster.core.services.dto.IEnterprise;
-import com.guicedee.activitymaster.core.services.dto.ISystems;
-import com.guicedee.activitymaster.core.services.system.*;
+import com.guicedee.activitymaster.core.services.system.ActivityMasterDefaultSystem;
+import com.guicedee.activitymaster.core.services.system.ISystemsService;
 import com.guicedee.activitymaster.mail.services.IMailSystem;
-import com.guicedee.activitymaster.mail.services.classifications.MailSystemClassifications;
-import com.guicedee.activitymaster.mail.services.enumerations.MailImportArrangementTypes;
-import com.guicedee.activitymaster.mail.services.enumerations.MailImportStage;
-import com.guicedee.guicedinjection.interfaces.JobService;
-import com.guicedee.logger.LogFactory;
 
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
-import static com.guicedee.activitymaster.mail.services.classifications.MailSystemClassifications.*;
-import static com.guicedee.activitymaster.mail.services.classifications.MailSystemResourceItemClassifications.*;
-import static com.guicedee.activitymaster.mail.services.enumerations.MailImportResourceItemTypes.*;
-import static com.guicedee.guicedinjection.GuiceContext.*;
+import static com.guicedee.activitymaster.mail.services.IMailService.*;
 
 @Singleton
 public class MailSystem
 		extends ActivityMasterDefaultSystem<MailSystem>
 		implements IMailSystem<MailSystem>, IActivityMasterSystem<MailSystem>
 {
+	@Inject
+	private Provider<ISystemsService<?>> systemsService;
+	
+	@Override
+	public void registerSystem(IEnterprise<?> enterprise, IActivityMasterProgressMonitor progressMonitor)
+	{
+		systemsService.get()
+		              .create(enterprise, getSystemName(), getSystemDescription());
+	}
+	
 	@Override
 	public void createDefaults(IEnterprise<?> enterprise, IActivityMasterProgressMonitor progressMonitor)
 	{
@@ -41,7 +40,7 @@ public class MailSystem
 	@Override
 	public String getSystemName()
 	{
-		return "Mail Master";
+		return MailSystemName;
 	}
 
 	@Override
