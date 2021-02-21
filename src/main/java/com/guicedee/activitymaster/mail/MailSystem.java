@@ -1,6 +1,7 @@
 package com.guicedee.activitymaster.mail;
 
-import com.google.inject.*;
+import com.google.inject.Inject;
+import com.google.inject.Provider;
 import com.guicedee.activitymaster.core.services.IActivityMasterProgressMonitor;
 import com.guicedee.activitymaster.core.services.IActivityMasterSystem;
 import com.guicedee.activitymaster.core.services.dto.IEnterprise;
@@ -10,7 +11,6 @@ import com.guicedee.activitymaster.mail.services.IMailSystem;
 
 import static com.guicedee.activitymaster.mail.services.IMailService.*;
 
-@Singleton
 public class MailSystem
 		extends ActivityMasterDefaultSystem<MailSystem>
 		implements IMailSystem<MailSystem>, IActivityMasterSystem<MailSystem>
@@ -23,6 +23,8 @@ public class MailSystem
 	{
 		systemsService.get()
 		              .create(enterprise, getSystemName(), getSystemDescription());
+		systemsService.get()
+		              .registerNewSystem(enterprise, getSystem(enterprise));
 	}
 	
 	@Override

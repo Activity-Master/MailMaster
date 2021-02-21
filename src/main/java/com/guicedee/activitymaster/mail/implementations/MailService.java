@@ -1,14 +1,12 @@
 package com.guicedee.activitymaster.mail.implementations;
 
+import com.google.inject.Inject;
 import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnterpriseName;
 import com.guicedee.activitymaster.core.services.dto.*;
 import com.guicedee.activitymaster.core.services.enumtypes.IIdentificationType;
 import com.guicedee.activitymaster.core.services.exceptions.SecurityAccessException;
 import com.guicedee.activitymaster.core.services.security.Passwords;
-import com.guicedee.activitymaster.core.services.system.IEnterpriseService;
-import com.guicedee.activitymaster.core.services.system.IEventService;
-import com.guicedee.activitymaster.core.services.system.IInvolvedPartyService;
-import com.guicedee.activitymaster.core.services.system.ISecurityTokenService;
+import com.guicedee.activitymaster.core.services.system.*;
 import com.guicedee.activitymaster.mail.MailSystem;
 import com.guicedee.activitymaster.mail.roles.MailUserRoles;
 import com.guicedee.activitymaster.mail.servers.SaNrgMailServer;
@@ -16,11 +14,8 @@ import com.guicedee.activitymaster.mail.services.IMailBoxService;
 import com.guicedee.activitymaster.mail.services.IMailService;
 import com.guicedee.activitymaster.mail.services.classifications.MailSystemClassifications;
 import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
-import com.guicedee.activitymaster.profiles.exceptions.ProfileServiceException;
-import com.guicedee.activitymaster.profiles.exceptions.UserExistsException;
-import com.guicedee.activitymaster.profiles.exceptions.WaitingForConfirmationKeyException;
+import com.guicedee.activitymaster.profiles.exceptions.*;
 import com.guicedee.activitymaster.profiles.services.interfaces.IRolesService;
-
 import com.guicedee.activitymaster.profiles.webdto.UserRegistrationDTO;
 import com.guicedee.activitymaster.sessions.services.dto.UserLoginDTO;
 import com.guicedee.guicedinjection.GuiceContext;
@@ -42,7 +37,10 @@ import static com.guicedee.guicedinjection.GuiceContext.*;
 @SuppressWarnings("Duplicates")
 public class MailService
         implements IMailService<MailService> {
-
+    
+    @Inject
+    private IEnterprise<?> enterprise;
+    
     @Override
     public IInvolvedParty<?> findByEmail(String email, ISystems<?> systems, UUID... token) {
         IInvolvedParty<?> party = get(IInvolvedPartyService.class).findByIdentificationType(IdentificationTypeEmailAddress,
@@ -53,10 +51,7 @@ public class MailService
     @Override
     public ProfileServiceDTO<?> loginUser(UserLoginDTO<?> profileServiceDTO, IEnterpriseName<?> enterpriseName, UUID... identityToken) throws ProfileServiceException {
         IInvolvedPartyService<?> involvedPartyService = GuiceContext.get(IInvolvedPartyService.class);
-        IEnterprise<?> enterprise = GuiceContext.get(IEnterpriseService.class)
-                .getEnterprise(enterpriseName);
-
-        profileServiceDTO.setEnterprise(enterpriseName);
+        profileServiceDTO.setEnterprise(enterprise);
         UUID identity = GuiceContext.get(MailSystem.class)
                 .getSystemToken(enterpriseName.name());
         ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
@@ -82,7 +77,7 @@ public class MailService
                 UserRegistrationDTO<?> newDto = new UserRegistrationDTO();
                 newDto.setUserName(profileServiceDTO.getUserName());
                 newDto.setTermsandconditions(true);
-                newDto.setEnterprise(enterpriseName);
+                newDto.setEnterprise(enterprise);
                 newDto.setWebClientUUID(profileServiceDTO.getWebClientUUID());
                 newDto.setIdentityToken(profileServiceDTO.getIdentityToken());
                 foundParty = registerVisitor(newDto, enterpriseName, identityToken);
@@ -122,9 +117,6 @@ public class MailService
 
     IInvolvedParty<?> registerVisitor(UserRegistrationDTO<?> userRegistrationDTO, IEnterpriseName<?> enterpriseName, UUID... identityToken) throws UserExistsException, WaitingForConfirmationKeyException {
         IInvolvedPartyService<?> involvedPartyService = GuiceContext.get(IInvolvedPartyService.class);
-        IEnterprise<?> enterprise = GuiceContext.get(IEnterpriseService.class)
-                .getEnterprise(enterpriseName);
-
         UUID identity = GuiceContext.get(MailSystem.class)
                 .getSystemToken(enterpriseName.name());
         ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
