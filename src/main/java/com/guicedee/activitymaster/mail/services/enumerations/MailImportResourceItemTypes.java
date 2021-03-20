@@ -1,20 +1,17 @@
 package com.guicedee.activitymaster.mail.services.enumerations;
 
-import com.guicedee.activitymaster.core.services.enumtypes.IClassificationDataConceptValue;
-import com.guicedee.activitymaster.core.services.enumtypes.IResourceType;
 
-import static com.guicedee.activitymaster.core.services.concepts.EnterpriseClassificationDataConcepts.*;
+import static com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts.*;
 
 public enum MailImportResourceItemTypes
-		implements IResourceType<MailImportResourceItemTypes>
 {
 	FolderStatusResourceItem("FolderStatusResourceItem", GlobalClassificationsDataConceptName);
 
 
 	private String classificationValue;
-	private IClassificationDataConceptValue<?> dataConceptValue;
+	private com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts dataConceptValue;
 
-	MailImportResourceItemTypes(String classificationValue, IClassificationDataConceptValue<?> dataConceptValue)
+	MailImportResourceItemTypes(String classificationValue, com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts dataConceptValue)
 	{
 		this.classificationValue = classificationValue;
 		this.dataConceptValue = dataConceptValue;
@@ -25,26 +22,23 @@ public enum MailImportResourceItemTypes
 		this.classificationValue = classificationValue;
 	}
 
-	@Override
 	public String classificationName()
 	{
 		return name();
 	}
 
-	@Override
 	public String classificationValue()
 	{
 		return classificationValue;
 	}
 
-	@Override
 	public String classificationDescription()
 	{
 		return classificationValue;
 	}
 
-	@Override
-	public IClassificationDataConceptValue<?> concept()
+
+	public com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts concept()
 	{
 		return dataConceptValue;
 	}

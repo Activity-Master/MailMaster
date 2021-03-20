@@ -1,10 +1,9 @@
 package com.guicedee.activitymaster.mail.threads;
 
-import com.guicedee.activitymaster.core.services.classifications.enterprise.IEnterpriseName;
-import com.guicedee.activitymaster.core.services.dto.IArrangement;
-import com.guicedee.activitymaster.core.services.dto.IRelationshipValue;
-import com.guicedee.activitymaster.core.services.dto.IResourceItem;
-import com.guicedee.activitymaster.core.services.dto.ISystems;
+import com.guicedee.activitymaster.client.services.builders.warehouse.arrangements.IArrangement;
+import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise.IEnterprise;
+import com.guicedee.activitymaster.client.services.builders.warehouse.resourceitem.IResourceItem;
+import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.core.threads.TransactionalIdentifiedThread;
 import com.guicedee.activitymaster.mail.MailSystem;
 import com.guicedee.activitymaster.mail.implementations.MailboxBoxService;
@@ -15,8 +14,8 @@ import com.guicedee.activitymaster.mail.services.dto.MailFoldersStatus;
 import com.guicedee.activitymaster.mail.services.dto.MailImportTicket;
 import com.guicedee.guicedinjection.GuiceContext;
 import com.sun.mail.imap.IMAPFolder;
-
 import jakarta.mail.*;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -24,7 +23,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.guicedee.activitymaster.mail.services.classifications.MailSystemResourceItemClassifications.*;
-import static com.guicedee.activitymaster.mail.services.enumerations.MailImportResourceItemTypes.*;
 import static com.guicedee.guicedinjection.GuiceContext.*;
 
 public class MailImportRunThread
@@ -32,10 +30,10 @@ public class MailImportRunThread
         implements Runnable {
     private static final Logger log = Logger.getLogger(MailImportRunThread.class.getName());
 
-    private IArrangement<?> arrangement;
+    private IArrangement<?,?> arrangement;
 
     private MailImportTicket ticket;
-    private IEnterpriseName<?> enterprise;
+    private IEnterprise<?,?> enterprise;
 
     private MailboxBoxService source;
     private MailboxBoxService dest;
@@ -56,7 +54,7 @@ public class MailImportRunThread
 
     private MailFoldersStatus foldersStatus;
 
-    public MailImportRunThread(IArrangement<?> arrangement, IEnterpriseName<?> enterprise, MailImportTicket ticket) {
+    public MailImportRunThread(IArrangement<?,?> arrangement, IEnterprise<?,?> enterprise, MailImportTicket ticket) {
         this.arrangement = arrangement;
         this.enterprise = enterprise;
         this.ticket = ticket;
@@ -81,7 +79,7 @@ public class MailImportRunThread
         ticket.setPaused(false);
         ticket.setStatus("STARTING");
         get(IMailImportService.class)
-                .updateMailImportTicket(ticket, enterprise);
+                .updateMailImportTicket(ticket, enterprise.getName());
         try {
             Map<String, String> foldersToWorkOn = createFolders(dest, source);
             goThrough(foldersToWorkOn);
@@ -92,7 +90,7 @@ public class MailImportRunThread
             ticket.setPaused(true);
             ticket.setTotalSizeForToday(currentSize);
             get(IMailImportService.class)
-                    .updateMailImportTicket(ticket, enterprise);
+                    .updateMailImportTicket(ticket, enterprise.getName());
         }
     }
 
@@ -187,24 +185,20 @@ public class MailImportRunThread
             String value = entry.getValue();
             MailFoldersStatus foldersStatus = new MailFoldersStatus();
             UUID identity = GuiceContext.get(MailSystem.class)
-                    .getSystemToken(enterprise.name());
-            ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
-                    .getSystem(enterprise.name());
+                    .getSystemToken(enterprise);
+            ISystems<?,?> mailSystem = GuiceContext.get(MailSystem.class)
+                                                   .getSystem(enterprise);
 
-            List objects = arrangement.findResourceItemsAll(FolderStatusObject.toString(), key,false, mailSystem,identity);
+            var objects = arrangement.findResourceItemsAll(FolderStatusObject.toString(), key,mailSystem,false,identity);
 
-            for (Object object : objects) {
-
-                IRelationshipValue<IArrangement<?>, IResourceItem<?>, ?> relVal = arrangement.addOrReuseResourceItem(FolderStatusObject,
-                        FolderStatusResourceItem,
+            for (var object : objects) {
+    
+                IResourceItem<?, ?> secondary = object.getSecondary();
+                arrangement.addOrReuseResourceItem(FolderStatusObject.toString(),
+                        secondary,
                         foldersStatus.toString(),
-                        foldersStatus.toString(),
-                        foldersStatus.toString()
-                                .getBytes(),
-                        "application/json",
                         mailSystem,
                         identity);
-                System.out.println("Stuff");
             }
         }
         return folderMappings;
@@ -261,7 +255,7 @@ public class MailImportRunThread
                     this.currentSize += m.getSize();
                     ticket.setCompletedSize(ticket.getCompletedSize() + m.getSize());
                     ticket.setTotalSizeForToday(currentSize);
-                    get(IMailImportService.class).updateMailImportTicket(ticket, enterprise);
+                    get(IMailImportService.class).updateMailImportTicket(ticket, enterprise.getName());
                 } catch (MessagingException me) {
                     log.log(Level.WARNING, "Message UID does not exist [" + i + "] - Moving onto the next folder starting at 0", me);
                     ticket.setCompletedMails(0);
@@ -282,11 +276,11 @@ public class MailImportRunThread
         this.ticket = ticket;
     }
 
-    public IEnterpriseName<?> getEnterprise() {
+    public IEnterprise<?,?> getEnterprise() {
         return this.enterprise;
     }
 
-    public void setEnterprise(IEnterpriseName<?> enterprise) {
+    public void setEnterprise(IEnterprise<?,?> enterprise) {
         this.enterprise = enterprise;
     }
 
@@ -355,11 +349,11 @@ public class MailImportRunThread
         return this;
     }
 
-    public IArrangement<?> getArrangement() {
+    public IArrangement<?,?> getArrangement() {
         return arrangement;
     }
 
-    public MailImportRunThread setArrangement(IArrangement<?> arrangement) {
+    public MailImportRunThread setArrangement(IArrangement<?,?> arrangement) {
         this.arrangement = arrangement;
         return this;
     }

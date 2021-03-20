@@ -1,18 +1,15 @@
 package com.guicedee.activitymaster.mail.services.enumerations;
 
-import com.guicedee.activitymaster.core.services.enumtypes.IArrangementTypes;
-import com.guicedee.activitymaster.core.services.enumtypes.IClassificationDataConceptValue;
+import static com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts.*;
 
-import static com.guicedee.activitymaster.core.services.concepts.EnterpriseClassificationDataConcepts.*;
-
-public enum MailImportArrangementTypes implements IArrangementTypes<MailImportArrangementTypes>
+public enum MailImportArrangementTypes
 {
-	MailImport("MailImport", GlobalClassificationsDataConceptName)
+	MailImport("MailImport", ArrangementType)
 	;
 	private String classificationValue;
-	private IClassificationDataConceptValue<?> dataConceptValue;
+	private com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts dataConceptValue;
 
-	MailImportArrangementTypes(String classificationValue, IClassificationDataConceptValue<?> dataConceptValue)
+	MailImportArrangementTypes(String classificationValue, com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts dataConceptValue)
 	{
 		this.classificationValue = classificationValue;
 		this.dataConceptValue = dataConceptValue;
@@ -23,20 +20,20 @@ public enum MailImportArrangementTypes implements IArrangementTypes<MailImportAr
 		this.classificationValue = classificationValue;
 	}
 
-	@Override
+
 	public String classificationValue()
 	{
 		return classificationValue;
 	}
 
-	@Override
+
 	public String classificationDescription()
 	{
 		return classificationValue;
 	}
 
-	@Override
-	public IClassificationDataConceptValue<?> concept() {
+
+	public com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts concept() {
 		return ArrangementType;
 	}
 

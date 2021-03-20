@@ -1,12 +1,9 @@
 package com.guicedee.activitymaster.mail.services.enumerations;
 
-import com.guicedee.activitymaster.core.services.enumtypes.IClassificationDataConceptValue;
-import com.guicedee.activitymaster.core.services.classifications.arrangement.IArrangementClassification;
 
-import static com.guicedee.activitymaster.core.services.concepts.EnterpriseClassificationDataConcepts.*;
+import static com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts.*;
 
 public enum MailImportStage
-		implements IArrangementClassification<MailImportStage>
 {
 	MailImportNotStarted("MailImportNotStarted", ArrangementXClassification),
 	MailImportLoginError("MailImportLoginError", ArrangementXClassification),
@@ -14,9 +11,9 @@ public enum MailImportStage
 	MailImportCompleted("MailImportCompleted", ArrangementXClassification),
 	;
 	private String classificationValue;
-	private IClassificationDataConceptValue<?> dataConceptValue;
+	private com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts dataConceptValue;
 
-	MailImportStage(String classificationValue, IClassificationDataConceptValue<?> dataConceptValue)
+	MailImportStage(String classificationValue, com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts dataConceptValue)
 	{
 		this.classificationValue = classificationValue;
 		this.dataConceptValue = dataConceptValue;
@@ -27,14 +24,12 @@ public enum MailImportStage
 		this.classificationValue = classificationValue;
 	}
 
-	@Override
 	public String classificationDescription()
 	{
 		return classificationValue;
 	}
 
-	@Override
-	public IClassificationDataConceptValue<?> concept()
+	public com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts concept()
 	{
 		return dataConceptValue;
 	}

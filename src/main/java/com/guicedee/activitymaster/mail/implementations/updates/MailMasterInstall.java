@@ -1,14 +1,11 @@
 package com.guicedee.activitymaster.mail.implementations.updates;
 
-import com.guicedee.activitymaster.core.services.IActivityMasterProgressMonitor;
-import com.guicedee.activitymaster.core.services.dto.IEnterprise;
-import com.guicedee.activitymaster.core.services.dto.ISystems;
-import com.guicedee.activitymaster.core.services.system.IArrangementsService;
-import com.guicedee.activitymaster.core.services.system.IClassificationService;
-import com.guicedee.activitymaster.core.services.system.IResourceItemService;
-import com.guicedee.activitymaster.core.services.system.ISystemsService;
+import com.guicedee.activitymaster.client.services.*;
+import com.guicedee.activitymaster.client.services.administration.IActivityMasterProgressMonitor;
+import com.guicedee.activitymaster.client.services.administration.ISystemUpdate;
+import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise.IEnterprise;
+import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.core.updates.DatedUpdate;
-import com.guicedee.activitymaster.core.updates.ISystemUpdate;
 import com.guicedee.activitymaster.mail.MailSystem;
 import com.guicedee.activitymaster.mail.services.classifications.MailSystemClassifications;
 import com.guicedee.activitymaster.mail.services.enumerations.MailImportArrangementTypes;
@@ -21,27 +18,27 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.guicedee.activitymaster.mail.services.classifications.MailSystemClassifications.*;
-import static com.guicedee.activitymaster.mail.services.classifications.MailSystemResourceItemClassifications.FolderStatusObject;
-import static com.guicedee.activitymaster.mail.services.enumerations.MailImportResourceItemTypes.FolderStatusResourceItem;
-import static com.guicedee.guicedinjection.GuiceContext.get;
+import static com.guicedee.activitymaster.mail.services.classifications.MailSystemResourceItemClassifications.*;
+import static com.guicedee.activitymaster.mail.services.enumerations.MailImportResourceItemTypes.*;
+import static com.guicedee.guicedinjection.GuiceContext.*;
 
 @DatedUpdate(date = "2020/12/15", taskCount = 6)
 public class MailMasterInstall implements ISystemUpdate
 {
 	@Override
-	public void update(IEnterprise<?> enterprise, IActivityMasterProgressMonitor progressMonitor)
+	public void update(IEnterprise<?,?> enterprise, IActivityMasterProgressMonitor progressMonitor)
 	{
 		createClassifications(enterprise, progressMonitor);
 	}
 	
 	@SuppressWarnings("Duplicates")
-	private void createClassifications(IEnterprise<?> enterprise, IActivityMasterProgressMonitor progressMonitor)
+	private void createClassifications(IEnterprise<?,?> enterprise, IActivityMasterProgressMonitor progressMonitor)
 	{
 		IClassificationService<?> classificationService = get(IClassificationService.class);
-		ISystems<?> activityMasterSystem = get(ISystemsService.class)
+		ISystems<?,?> activityMasterSystem = get(ISystemsService.class)
 				.getActivityMaster(enterprise);
 		MailSystem systemM = GuiceContext.get(MailSystem.class);
-		ISystems<?> system = systemM.getSystem(enterprise);
+		ISystems<?,?> system = systemM.getSystem(enterprise);
 		UUID token = systemM.getSystemToken(enterprise);
 		IArrangementsService<?> arrangementsService = get(IArrangementsService.class);
 		
@@ -122,7 +119,7 @@ public class MailMasterInstall implements ISystemUpdate
 			
 			logProgress("Mail System", "Checking Arrangement Types", 1, progressMonitor);
 			
-			arrangementsService.createArrangementType(MailImportArrangementTypes.MailImport, system, token);
+			arrangementsService.createArrangementType(MailImportArrangementTypes.MailImport.toString(), system, token);
 			
 			logProgress("Mail System", "Checking Resource Item Types", 1, progressMonitor);
 			IResourceItemService<?> resourceItemService = get(IResourceItemService.class);

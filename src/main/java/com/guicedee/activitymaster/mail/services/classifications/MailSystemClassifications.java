@@ -1,16 +1,8 @@
 package com.guicedee.activitymaster.mail.services.classifications;
 
-import com.guicedee.activitymaster.core.services.classifications.arrangement.IArrangementClassification;
-import com.guicedee.activitymaster.core.services.enumtypes.IClassificationValue;
-import com.guicedee.activitymaster.core.services.enumtypes.IClassificationDataConceptValue;
-import com.guicedee.activitymaster.core.services.classifications.involvedparty.IInvolvedPartyClassification;
-
-import static com.guicedee.activitymaster.core.services.concepts.EnterpriseClassificationDataConcepts.*;
+import static com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts.*;
 
 public enum MailSystemClassifications
-		implements IClassificationValue<MailSystemClassifications>
-				           , IInvolvedPartyClassification<MailSystemClassifications>,
-				           IArrangementClassification<MailSystemClassifications>
 {
 	MailImport("A mail import classification", GlobalClassificationsDataConceptName),
 
@@ -48,9 +40,9 @@ public enum MailSystemClassifications
 	;
 
 	private String description;
-	private IClassificationDataConceptValue<?> concept;
+	private com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts concept;
 
-	MailSystemClassifications(String description, IClassificationDataConceptValue<?> concept)
+	MailSystemClassifications(String description, com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts concept)
 	{
 		this.description = description;
 		this.concept = concept;
@@ -61,14 +53,12 @@ public enum MailSystemClassifications
 		this.description = description;
 	}
 
-	@Override
 	public String classificationDescription()
 	{
 		return this.description;
 	}
 
-	@Override
-	public IClassificationDataConceptValue<?> concept()
+	public com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts concept()
 	{
 		return concept;
 	}

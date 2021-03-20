@@ -1,30 +1,28 @@
 package com.guicedee.activitymaster.mail.implementations;
 
-import com.guicedee.activitymaster.core.services.dto.IArrangement;
-import com.guicedee.activitymaster.core.services.dto.IEnterprise;
-import com.guicedee.activitymaster.core.services.dto.IInvolvedParty;
-import com.guicedee.activitymaster.core.services.dto.ISystems;
-import com.guicedee.activitymaster.core.services.security.Passwords;
-import com.guicedee.activitymaster.core.services.system.IArrangementsService;
-import com.guicedee.activitymaster.core.services.system.IInvolvedPartyService;
-import com.guicedee.activitymaster.core.services.types.IdentificationTypes;
+import com.guicedee.activitymaster.client.services.IArrangementsService;
+import com.guicedee.activitymaster.client.services.IInvolvedPartyService;
+import com.guicedee.activitymaster.client.services.builders.warehouse.arrangements.IArrangement;
+import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise.IEnterprise;
+import com.guicedee.activitymaster.client.services.builders.warehouse.party.IInvolvedParty;
+import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
+import com.guicedee.activitymaster.client.services.classifications.types.IdentificationTypes;
 import com.guicedee.activitymaster.mail.MailSystem;
 import com.guicedee.activitymaster.mail.servers.MailServer;
 import com.guicedee.activitymaster.mail.services.IMailBoxService;
 import com.guicedee.activitymaster.mail.services.classifications.MailSystemClassifications;
 import com.guicedee.guicedinjection.GuiceContext;
 import com.sun.mail.imap.IMAPFolder;
-
 import jakarta.mail.*;
+
 import java.io.Closeable;
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.guicedee.activitymaster.mail.services.classifications.MailSystemClassifications.MailImportFor;
-import static com.guicedee.activitymaster.mail.services.enumerations.MailImportArrangementTypes.*;
+import static com.guicedee.activitymaster.mail.services.classifications.MailSystemClassifications.*;
+import static com.guicedee.activitymaster.mail.services.enumerations.MailImportArrangementTypes.MailImport;
 
 public class MailboxBoxService
 		implements IMailBoxService<MailboxBoxService>, Closeable
@@ -65,27 +63,27 @@ public class MailboxBoxService
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public IInvolvedParty<?> findByEmail(String emailAddress, ISystems<?> systems, UUID... identityToken)
+	public IInvolvedParty<?,?> findByEmail(String emailAddress, ISystems<?,?> systems, UUID... identityToken)
 	{
 		UUID identity = GuiceContext.get(MailSystem.class)
 		                            .getSystemToken(systems.getEnterprise());
-		IInvolvedParty<?> involvedPartyService = GuiceContext.get(IInvolvedPartyService.class)
-		                                                     .findByIdentificationType(IdentificationTypes.IdentificationTypeEmailAddress,
-		                                                                               new Passwords().integerEncrypt(emailAddress.getBytes())
+		IInvolvedParty<?,?> involvedPartyService = GuiceContext.get(IInvolvedPartyService.class)
+		                                                     .findByIdentificationType(IdentificationTypes.IdentificationTypeEmailAddress.toString(),
+		                                                                               emailAddress
 				                                                     , systems, identity);
 
 		return involvedPartyService;
 	}
 
 	@Override
-	public ISystems<?> getMailSystem(IEnterprise<?> enterprise)
+	public ISystems<?,?> getMailSystem(IEnterprise<?,?> enterprise)
 	{
 		return GuiceContext.get(MailSystem.class)
 		                   .getSystem(enterprise);
 	}
 
 	@Override
-	public UUID getMailUUID(IEnterprise<?> enterprise)
+	public UUID getMailUUID(IEnterprise<?,?> enterprise)
 	{
 		return GuiceContext.get(MailSystem.class)
 		                   .getSystemToken(enterprise);
@@ -127,16 +125,16 @@ public class MailboxBoxService
 	}
 
 	@Override
-	public IArrangement<?> createArrangement(IInvolvedParty<?> ip, String value, UUID... identityToken)
+	public IArrangement<?,?> createArrangement(IInvolvedParty<?,?> ip, String value, UUID... identityToken)
 	{
 		UUID identity = GuiceContext.get(MailSystem.class)
 		                            .getSystemToken(ip.getEnterprise());
-		ISystems<?> mailSystem = GuiceContext.get(MailSystem.class)
+		ISystems<?,?> mailSystem = GuiceContext.get(MailSystem.class)
 		                                     .getSystem(ip.getEnterprise());
 
 		IArrangementsService<?> arrangementsService = GuiceContext.get(IArrangementsService.class);
-		IArrangement<?> a = arrangementsService.create(MailImport,MailImportFor,value, mailSystem, identityToken);
-		a.addInvolvedParty(ip, MailSystemClassifications.MailImport, value, mailSystem, identity);
+		IArrangement<?,?> a = arrangementsService.create(MailImport.toString(),MailImportFor.toString(),value, mailSystem, identityToken);
+		a.addInvolvedParty(ip, MailSystemClassifications.MailImport.toString(), value, mailSystem, identity);
 
 		return a;
 	}
