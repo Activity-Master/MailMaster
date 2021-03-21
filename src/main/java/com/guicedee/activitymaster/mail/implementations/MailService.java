@@ -1,14 +1,13 @@
 package com.guicedee.activitymaster.mail.implementations;
 
 import com.google.inject.Inject;
-import com.guicedee.activitymaster.client.implementations.Passwords;
 import com.guicedee.activitymaster.client.services.*;
 import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise.IEnterprise;
 import com.guicedee.activitymaster.client.services.builders.warehouse.events.IEvent;
 import com.guicedee.activitymaster.client.services.builders.warehouse.party.IInvolvedParty;
 import com.guicedee.activitymaster.client.services.builders.warehouse.security.ISecurityToken;
 import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
-import com.guicedee.activitymaster.core.services.exceptions.SecurityAccessException;
+import com.guicedee.activitymaster.client.services.exceptions.SecurityAccessException;
 import com.guicedee.activitymaster.mail.MailSystem;
 import com.guicedee.activitymaster.mail.roles.MailUserRoles;
 import com.guicedee.activitymaster.mail.servers.SaNrgMailServer;
@@ -150,8 +149,7 @@ public class MailService
         //Create new guest record
         Pair<String, String> guestIDType = new Pair<>();
         guestIDType.setKey(IdentificationTypeEmailAddress.toString())
-                .setValue(new Passwords().integerEncrypt(profileServiceDTO.getUserName()
-                        .getBytes()));
+                .setValue(profileServiceDTO.getUserName());
 
         profileServiceDTO.setWebClientUUID(UUID.randomUUID());
 
@@ -161,8 +159,7 @@ public class MailService
                                                       .getRegisteredGuestsFolder(profileSystem, identityToken);
 
         ISecurityToken<?,?> myToken = get(ISecurityTokenService.class).create(Identity.toString(),
-                new Passwords().integerEncrypt(profileServiceDTO.getUserName()
-                        .getBytes()),
+                profileServiceDTO.getUserName(),
                 "An agent registration",
                 profileSystem,
                 visitorsGroup,

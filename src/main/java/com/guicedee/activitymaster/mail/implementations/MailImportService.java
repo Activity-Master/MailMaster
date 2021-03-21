@@ -1,6 +1,5 @@
 package com.guicedee.activitymaster.mail.implementations;
 
-import com.guicedee.activitymaster.client.implementations.Passwords;
 import com.guicedee.activitymaster.client.services.IArrangementsService;
 import com.guicedee.activitymaster.client.services.IEnterpriseService;
 import com.guicedee.activitymaster.client.services.builders.warehouse.arrangements.IArrangement;
@@ -180,7 +179,7 @@ public class MailImportService
 				ticket.setPaused(true);
 				try
 				{
-					ticket.setSanrgMailAddress(new String(new Passwords().integerDecrypt(row[11].toString())));
+					ticket.setSanrgMailAddress(row[11].toString());
 				}
 				catch (Exception e)
 				{
@@ -188,7 +187,7 @@ public class MailImportService
 				}
 				try
 				{
-					ticket.setGmailAddress(new String(new Passwords().integerDecrypt(row[12].toString())));
+					ticket.setGmailAddress(row[12].toString());
 				}
 				catch (Exception e)
 				{

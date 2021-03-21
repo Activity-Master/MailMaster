@@ -1,10 +1,10 @@
 package com.guicedee.activitymaster.mail.threads;
 
+import com.guicedee.activitymaster.client.services.annotations.ActivityMasterDB;
 import com.guicedee.activitymaster.client.services.builders.warehouse.arrangements.IArrangement;
 import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise.IEnterprise;
 import com.guicedee.activitymaster.client.services.builders.warehouse.resourceitem.IResourceItem;
 import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
-import com.guicedee.activitymaster.core.threads.TransactionalIdentifiedThread;
 import com.guicedee.activitymaster.mail.MailSystem;
 import com.guicedee.activitymaster.mail.implementations.MailboxBoxService;
 import com.guicedee.activitymaster.mail.servers.GMailMailServer;
@@ -13,6 +13,7 @@ import com.guicedee.activitymaster.mail.services.IMailImportService;
 import com.guicedee.activitymaster.mail.services.dto.MailFoldersStatus;
 import com.guicedee.activitymaster.mail.services.dto.MailImportTicket;
 import com.guicedee.guicedinjection.GuiceContext;
+import com.guicedee.guicedpersistence.db.annotations.Transactional;
 import com.sun.mail.imap.IMAPFolder;
 import jakarta.mail.*;
 
@@ -26,7 +27,7 @@ import static com.guicedee.activitymaster.mail.services.classifications.MailSyst
 import static com.guicedee.guicedinjection.GuiceContext.*;
 
 public class MailImportRunThread
-        extends TransactionalIdentifiedThread
+        extends Thread
         implements Runnable {
     private static final Logger log = Logger.getLogger(MailImportRunThread.class.getName());
 
@@ -73,7 +74,8 @@ public class MailImportRunThread
 
     @SuppressWarnings("unchecked")
     @Override
-    public void perform() {
+    @Transactional(entityManagerAnnotation = ActivityMasterDB.class)
+    public void run() {
         ticket.setLastRunDate(DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss.SSS")
                 .format(LocalDateTime.now()));
         ticket.setPaused(false);

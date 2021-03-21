@@ -1,3 +1,5 @@
+import com.guicedee.activitymaster.client.services.systems.IActivityMasterSystem;
+
 module com.guicedee.activitymaster.mail {
 
 	requires jakarta.mail;
@@ -26,7 +28,7 @@ module com.guicedee.activitymaster.mail {
 	requires com.guicedee.activitymaster.sessions;
 	requires com.guicedee.activitymaster.client;
 	
-	provides com.guicedee.activitymaster.core.services.IActivityMasterSystem with com.guicedee.activitymaster.mail.MailSystem;
+	provides IActivityMasterSystem with com.guicedee.activitymaster.mail.MailSystem;
 	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with com.guicedee.activitymaster.mail.implementations.MailMasterBinder;
 
 	opens com.guicedee.activitymaster.mail;
