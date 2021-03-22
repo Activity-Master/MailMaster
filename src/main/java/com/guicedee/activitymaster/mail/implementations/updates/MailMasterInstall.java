@@ -20,7 +20,7 @@ import static com.guicedee.activitymaster.mail.services.classifications.MailSyst
 import static com.guicedee.activitymaster.mail.services.enumerations.MailImportResourceItemTypes.*;
 import static com.guicedee.guicedinjection.GuiceContext.*;
 
-@DatedUpdate(date = "2020/12/15", taskCount = 6)
+@SortedUpdate(sortOrder = 1500, taskCount = 6)
 public class MailMasterInstall implements ISystemUpdate
 {
 	@Override
