@@ -1,10 +1,10 @@
 package com.guicedee.activitymaster.mail.implementations;
 
-import com.guicedee.activitymaster.client.services.IArrangementsService;
-import com.guicedee.activitymaster.client.services.IEnterpriseService;
-import com.guicedee.activitymaster.client.services.builders.warehouse.arrangements.IArrangement;
-import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise.IEnterprise;
-import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
+import com.guicedee.activitymaster.fsdm.client.services.IArrangementsService;
+import com.guicedee.activitymaster.fsdm.client.services.IEnterpriseService;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.arrangements.IArrangement;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.enterprise.IEnterprise;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.mail.MailSystem;
 import com.guicedee.activitymaster.mail.servers.MailServer;
 import com.guicedee.activitymaster.mail.services.IMailImportService;
@@ -36,8 +36,6 @@ public class MailImportService
 	@Override
 	public List<MailImportTicket> fromArrangements(List<IArrangement<?,?>> arrangements, String enterpriseName)
 	{
-		IEnterprise<?,?> enterprise = get(IEnterpriseService.class)
-				                            .getEnterprise(enterpriseName);
 		UUID uuid = GuiceContext.get(MailSystem.class)
 		                        .getSystemToken(enterpriseName);
 		ISystems<?,?> mailSystem = GuiceContext.get(MailSystem.class)
@@ -169,21 +167,21 @@ public class MailImportService
 
 				try
 				{
-					ticket.setSanrgChecked(Boolean.valueOf(row[10].toString()));
+					ticket.setDestChecked(Boolean.valueOf(row[10].toString()));
 				}
 				catch (Exception e)
 				{
-					ticket.setSanrgChecked(false);
+					ticket.setDestChecked(false);
 				}
 
 				ticket.setPaused(true);
 				try
 				{
-					ticket.setSanrgMailAddress(row[11].toString());
+					ticket.setDestMailAddress(row[11].toString());
 				}
 				catch (Exception e)
 				{
-					ticket.setSanrgMailAddress("In Progress");
+					ticket.setDestMailAddress("In Progress");
 				}
 				try
 				{
@@ -233,7 +231,7 @@ public class MailImportService
 		IArrangement<?,?> arrangement = get(IArrangementsService.class).find(mailImportTicket.getArrangementId(), mailSystem, uuid);
 
 		arrangement.addOrUpdateClassification(ConfirmedSourceMailImport.toString(), "" + mailImportTicket.isGmailChecked(), mailSystem);
-		arrangement.addOrUpdateClassification(ConfirmedDestinationMailImport.toString(), "" + mailImportTicket.isSanrgChecked(), mailSystem);
+		arrangement.addOrUpdateClassification(ConfirmedDestinationMailImport.toString(), "" + mailImportTicket.isDestChecked(), mailSystem);
 
 		arrangement.addOrUpdateClassification(CurrentDayOfImport.toString(), "" + mailImportTicket.getLastRunDate(), mailSystem);
 		arrangement.addOrUpdateClassification(CurrentDaySizeOfImport.toString(), "" + mailImportTicket.getTotalSizeForToday(), mailSystem);

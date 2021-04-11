@@ -1,16 +1,16 @@
 package com.guicedee.activitymaster.mail.implementations;
 
 import com.google.inject.Inject;
-import com.guicedee.activitymaster.client.services.*;
-import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise.IEnterprise;
-import com.guicedee.activitymaster.client.services.builders.warehouse.events.IEvent;
-import com.guicedee.activitymaster.client.services.builders.warehouse.party.IInvolvedParty;
-import com.guicedee.activitymaster.client.services.builders.warehouse.security.ISecurityToken;
-import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
-import com.guicedee.activitymaster.client.services.exceptions.SecurityAccessException;
+import com.guicedee.activitymaster.fsdm.client.services.*;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.enterprise.IEnterprise;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.events.IEvent;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.security.ISecurityToken;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
+import com.guicedee.activitymaster.fsdm.client.services.exceptions.SecurityAccessException;
 import com.guicedee.activitymaster.mail.MailSystem;
 import com.guicedee.activitymaster.mail.roles.MailUserRoles;
-import com.guicedee.activitymaster.mail.servers.SaNrgMailServer;
+import com.guicedee.activitymaster.mail.servers.GMailMailServer;
 import com.guicedee.activitymaster.mail.services.IMailBoxService;
 import com.guicedee.activitymaster.mail.services.IMailService;
 import com.guicedee.activitymaster.mail.services.classifications.MailSystemClassifications;
@@ -24,11 +24,11 @@ import com.guicedee.guicedinjection.pairing.Pair;
 
 import java.util.UUID;
 
-import static com.guicedee.activitymaster.client.services.classifications.DefaultClassifications.*;
-import static com.guicedee.activitymaster.client.services.classifications.EventInvolvedPartiesClassifications.*;
-import static com.guicedee.activitymaster.client.services.classifications.SecurityTokenClassifications.*;
-import static com.guicedee.activitymaster.client.services.classifications.types.IdentificationTypes.*;
-import static com.guicedee.activitymaster.client.services.classifications.types.NameTypes.*;
+import static com.guicedee.activitymaster.fsdm.client.services.classifications.DefaultClassifications.*;
+import static com.guicedee.activitymaster.fsdm.client.services.classifications.EventInvolvedPartiesClassifications.*;
+import static com.guicedee.activitymaster.fsdm.client.services.classifications.SecurityTokenClassifications.*;
+import static com.guicedee.activitymaster.fsdm.client.services.classifications.types.IdentificationTypes.*;
+import static com.guicedee.activitymaster.fsdm.client.services.classifications.types.NameTypes.*;
 import static com.guicedee.activitymaster.mail.roles.MailUserRoles.*;
 import static com.guicedee.activitymaster.profiles.enumerations.ProfileClassifications.*;
 import static com.guicedee.activitymaster.profiles.enumerations.ProfileEventTypes.*;
@@ -43,15 +43,22 @@ public class MailService
     @Inject
     private IEnterprise<?,?> enterprise;
     
+    @Inject
+    private IInvolvedPartyService<?> involvedPartyService;
+    
     @Override
     public IInvolvedParty<?,?> findByEmail(String email, ISystems<?,?> systems, UUID... token) {
-        IInvolvedParty<?,?> party = get(IInvolvedPartyService.class).findByIdentificationType(IdentificationTypeEmailAddress.toString(),email, systems, token);
+        IInvolvedParty<?, ?> party = involvedPartyService.get()
+                                                         .builder()
+                                                         .findByIdentificationType(IdentificationTypeEmailAddress.toString(), email, systems, token)
+                                                         .get()
+                                                         .orElse(null);
         return party;
     }
 
     @Override
     public ProfileServiceDTO<?> loginUser(UserLoginDTO<?> profileServiceDTO, String enterpriseName, UUID... identityToken) throws ProfileServiceException {
-        IInvolvedPartyService<?> involvedPartyService = GuiceContext.get(IInvolvedPartyService.class);
+
         profileServiceDTO.setEnterprise(enterprise);
         UUID identity = GuiceContext.get(MailSystem.class)
                 .getSystemToken(enterpriseName);
@@ -61,12 +68,16 @@ public class MailService
         if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null) {
             identityToken = new UUID[]{identity};
         }
+    
+        IInvolvedParty<?, ?> newIp = involvedPartyService.get()
+                                                         .builder()
+                                                         .findByIdentificationType(IdentificationTypeWebClientUUID.toString(),
+                                                                 profileServiceDTO.getWebClientUUID()
+                                                                                  .toString(), mailSystem, identity)
+                                                         .get()
+                                                         .orElse(null);
 
-        IInvolvedParty<?,?> newIp = involvedPartyService.findByIdentificationType(IdentificationTypeWebClientUUID.toString(),
-                profileServiceDTO.getWebClientUUID()
-                        .toString(), mailSystem, identity);
-
-        try (IMailBoxService<?> service = IMailBoxService.get(new SaNrgMailServer(profileServiceDTO.getUserName(), profileServiceDTO.getPassword()))) {
+        try (IMailBoxService<?> service = IMailBoxService.get(new GMailMailServer(profileServiceDTO.getUserName(), profileServiceDTO.getPassword()))) {
             service.login();
 
             IMailService<?> mailService = get(IMailService.class);
@@ -118,7 +129,7 @@ public class MailService
     }
 
     IInvolvedParty<?,?> registerVisitor(UserRegistrationDTO<?> userRegistrationDTO, String  enterpriseName, UUID... identityToken) throws UserExistsException, WaitingForConfirmationKeyException {
-        IInvolvedPartyService<?> involvedPartyService = GuiceContext.get(IInvolvedPartyService.class);
+
         UUID identity = GuiceContext.get(MailSystem.class)
                 .getSystemToken(enterpriseName);
         ISystems<?,?> mailSystem = GuiceContext.get(MailSystem.class)
@@ -126,10 +137,14 @@ public class MailService
 
         IEvent<?,?> registerEvent = GuiceContext.get(IEventService.class)
                 .createEvent(UserRegistered.toString(), mailSystem, identity);
-
-        IInvolvedParty<?,?> ipExists = involvedPartyService.findByIdentificationType(IdentificationTypeEmailAddress.toString(),
-                userRegistrationDTO.getUserName()
-                , mailSystem, identity);
+    
+        IInvolvedParty<?, ?> ipExists = involvedPartyService.get()
+                                                            .builder()
+                                                            .findByIdentificationType(IdentificationTypeEmailAddress.toString(),
+                                                                    userRegistrationDTO.getUserName()
+                                                                    , mailSystem, identity)
+                                                            .get()
+                                                            .orElse(null);
         if (ipExists != null) {
             if (ipExists.hasResourceItems(ConfirmationKey.toString(),null, mailSystem, identityToken)) {
                 throw new WaitingForConfirmationKeyException("The email address is waiting for a confirmation key");
@@ -144,7 +159,6 @@ public class MailService
     }
 
     IInvolvedParty<?,?> createNewVisitor(IEvent<?,?> event, UserRegistrationDTO<?> profileServiceDTO, IEnterprise<?,?> enterprise, ISystems<?,?> profileSystem, UUID... identityToken) {
-        IInvolvedPartyService<?> involvedPartyService = GuiceContext.get(IInvolvedPartyService.class);
         IInvolvedParty<?,?> newIp;
         //Create new guest record
         Pair<String, String> guestIDType = new Pair<>();

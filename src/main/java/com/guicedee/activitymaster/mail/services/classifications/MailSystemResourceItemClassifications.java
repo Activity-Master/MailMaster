@@ -1,6 +1,6 @@
 package com.guicedee.activitymaster.mail.services.classifications;
 
-import static com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts.*;
+import static com.guicedee.activitymaster.fsdm.client.services.classifications.EnterpriseClassificationDataConcepts.*;
 
 public enum MailSystemResourceItemClassifications
 {
@@ -8,9 +8,9 @@ public enum MailSystemResourceItemClassifications
 	;
 
 	private String description;
-	private com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts concept;
+	private com.guicedee.activitymaster.fsdm.client.services.classifications.EnterpriseClassificationDataConcepts concept;
 
-	MailSystemResourceItemClassifications(String description, com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts concept)
+	MailSystemResourceItemClassifications(String description, com.guicedee.activitymaster.fsdm.client.services.classifications.EnterpriseClassificationDataConcepts concept)
 	{
 		this.description = description;
 		this.concept = concept;
@@ -26,7 +26,7 @@ public enum MailSystemResourceItemClassifications
 		return this.description;
 	}
 
-	public com.guicedee.activitymaster.client.services.classifications.EnterpriseClassificationDataConcepts concept()
+	public com.guicedee.activitymaster.fsdm.client.services.classifications.EnterpriseClassificationDataConcepts concept()
 	{
 		return concept;
 	}

@@ -1,12 +1,12 @@
 package com.guicedee.activitymaster.mail.implementations;
 
-import com.guicedee.activitymaster.client.services.IArrangementsService;
-import com.guicedee.activitymaster.client.services.IInvolvedPartyService;
-import com.guicedee.activitymaster.client.services.builders.warehouse.arrangements.IArrangement;
-import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise.IEnterprise;
-import com.guicedee.activitymaster.client.services.builders.warehouse.party.IInvolvedParty;
-import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
-import com.guicedee.activitymaster.client.services.classifications.types.IdentificationTypes;
+import com.guicedee.activitymaster.fsdm.client.services.IArrangementsService;
+import com.guicedee.activitymaster.fsdm.client.services.IInvolvedPartyService;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.arrangements.IArrangement;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.enterprise.IEnterprise;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
+import com.guicedee.activitymaster.fsdm.client.services.classifications.types.IdentificationTypes;
 import com.guicedee.activitymaster.mail.MailSystem;
 import com.guicedee.activitymaster.mail.servers.MailServer;
 import com.guicedee.activitymaster.mail.services.IMailBoxService;
@@ -67,10 +67,14 @@ public class MailboxBoxService
 	{
 		UUID identity = GuiceContext.get(MailSystem.class)
 		                            .getSystemToken(systems.getEnterprise());
-		IInvolvedParty<?,?> involvedPartyService = GuiceContext.get(IInvolvedPartyService.class)
-		                                                     .findByIdentificationType(IdentificationTypes.IdentificationTypeEmailAddress.toString(),
-		                                                                               emailAddress
-				                                                     , systems, identity);
+		IInvolvedPartyService<?> iInvolvedPartyService = GuiceContext.get(IInvolvedPartyService.class);
+		IInvolvedParty<?, ?> involvedPartyService = iInvolvedPartyService.get()
+		                                                                 .builder()
+		                                                                 .findByIdentificationType(IdentificationTypes.IdentificationTypeEmailAddress.toString(),
+				                                                                 emailAddress
+				                                                                 , systems, identity)
+		                                                                 .get()
+		                                                                 .orElse(null);
 
 		return involvedPartyService;
 	}

@@ -1,9 +1,9 @@
 package com.guicedee.activitymaster.mail.services;
 
-import com.guicedee.activitymaster.client.services.builders.warehouse.arrangements.IArrangement;
-import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise.IEnterprise;
-import com.guicedee.activitymaster.client.services.builders.warehouse.party.IInvolvedParty;
-import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.arrangements.IArrangement;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.enterprise.IEnterprise;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.mail.implementations.MailboxBoxService;
 import com.guicedee.activitymaster.mail.servers.MailServer;
 import jakarta.mail.Folder;

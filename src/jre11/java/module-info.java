@@ -1,4 +1,4 @@
-import com.guicedee.activitymaster.client.services.systems.IActivityMasterSystem;
+import com.guicedee.activitymaster.fsdm.client.services.systems.IActivityMasterSystem;
 
 module com.guicedee.activitymaster.mail {
 
@@ -17,7 +17,7 @@ module com.guicedee.activitymaster.mail {
 
 	requires java.sql;
 
-	requires com.guicedee.activitymaster.core;
+	requires com.guicedee.activitymaster.fsdm;
 	requires com.google.guice;
 
 	requires com.guicedee.guicedinjection;
@@ -26,7 +26,7 @@ module com.guicedee.activitymaster.mail {
 	requires com.fasterxml.jackson.annotation;
 	requires com.fasterxml.jackson.databind;
 	requires com.guicedee.activitymaster.sessions;
-	requires com.guicedee.activitymaster.client;
+	requires com.guicedee.activitymaster.fsdm.client;
 	
 	provides IActivityMasterSystem with com.guicedee.activitymaster.mail.MailSystem;
 	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with com.guicedee.activitymaster.mail.implementations.MailMasterBinder;

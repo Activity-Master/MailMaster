@@ -1,14 +1,13 @@
 package com.guicedee.activitymaster.mail.threads;
 
-import com.guicedee.activitymaster.client.services.annotations.ActivityMasterDB;
-import com.guicedee.activitymaster.client.services.builders.warehouse.arrangements.IArrangement;
-import com.guicedee.activitymaster.client.services.builders.warehouse.enterprise.IEnterprise;
-import com.guicedee.activitymaster.client.services.builders.warehouse.resourceitem.IResourceItem;
-import com.guicedee.activitymaster.client.services.builders.warehouse.systems.ISystems;
+import com.guicedee.activitymaster.fsdm.client.services.annotations.ActivityMasterDB;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.arrangements.IArrangement;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.enterprise.IEnterprise;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.resourceitem.IResourceItem;
+import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.mail.MailSystem;
 import com.guicedee.activitymaster.mail.implementations.MailboxBoxService;
 import com.guicedee.activitymaster.mail.servers.GMailMailServer;
-import com.guicedee.activitymaster.mail.servers.SaNrgMailServer;
 import com.guicedee.activitymaster.mail.services.IMailImportService;
 import com.guicedee.activitymaster.mail.services.dto.MailFoldersStatus;
 import com.guicedee.activitymaster.mail.services.dto.MailImportTicket;
@@ -64,7 +63,7 @@ public class MailImportRunThread
 
     public void configure() {
         this.source = new MailboxBoxService(new GMailMailServer(ticket.getGmailAddress(), ticket.getGmailPassword()));
-        this.dest = new MailboxBoxService(new SaNrgMailServer(ticket.getSanrgMailAddress(), ticket.getSanrgMailPassword()));
+        this.dest = new MailboxBoxService(new GMailMailServer(ticket.getGoToMailAddress(), ticket.getDestMailPassword()));
         this.startMail = ticket.getCompletedMails() + 1;
         this.currentFolder = ticket.getCurrentFolder();
     }

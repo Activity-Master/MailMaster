@@ -1,9 +1,6 @@
 package com.guicedee.activitymaster.mail.services.dto;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.*;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -17,8 +14,8 @@ import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.*;
 public class MailImportTicket
 {
 	private UUID arrangementId;
-	private String sanrgMailAddress;
-	private String sanrgMailPassword;
+	private String destMailAddress;
+	private String destMailPassword;
 	private String gmailAddress;
 	private String gmailPassword;
 
@@ -27,7 +24,7 @@ public class MailImportTicket
 
 	private boolean started;
 	private boolean paused;
-	private boolean sanrgChecked;
+	private boolean destChecked;
 	private boolean gmailChecked;
 
 	private long totalMails;
@@ -57,14 +54,14 @@ public class MailImportTicket
 		return this;
 	}
 
-	public String getSanrgMailAddress()
+	public String getGoToMailAddress()
 	{
-		return this.sanrgMailAddress;
+		return this.destMailAddress;
 	}
 
-	public  String getSanrgMailPassword()
+	public  String getDestMailPassword()
 	{
-		return this.sanrgMailPassword;
+		return this.destMailPassword;
 	}
 
 	public  String getGmailAddress()
@@ -98,9 +95,9 @@ public class MailImportTicket
 		return this.paused;
 	}
 
-	public boolean isSanrgChecked()
+	public boolean isDestChecked()
 	{
-		return this.sanrgChecked;
+		return this.destChecked;
 	}
 
 	public boolean isGmailChecked()
@@ -145,15 +142,15 @@ public class MailImportTicket
 
 
 
-	public MailImportTicket setSanrgMailAddress( String sanrgMailAddress)
+	public MailImportTicket setDestMailAddress(String destMailAddress)
 	{
-		this.sanrgMailAddress = sanrgMailAddress;
+		this.destMailAddress = destMailAddress;
 		return this;
 	}
 
-	public MailImportTicket setSanrgMailPassword( String sanrgMailPassword)
+	public MailImportTicket setDestMailPassword(String destMailPassword)
 	{
-		this.sanrgMailPassword = sanrgMailPassword;
+		this.destMailPassword = destMailPassword;
 		return this;
 	}
 
@@ -181,9 +178,9 @@ public class MailImportTicket
 		return this;
 	}
 
-	public MailImportTicket setSanrgChecked(boolean sanrgChecked)
+	public MailImportTicket setDestChecked(boolean destChecked)
 	{
-		this.sanrgChecked = sanrgChecked;
+		this.destChecked = destChecked;
 		return this;
 	}
 
@@ -269,13 +266,13 @@ public class MailImportTicket
 			return false;
 		}
 		MailImportTicket that = (MailImportTicket) o;
-		return Objects.equals(getSanrgMailAddress(), that.getSanrgMailAddress()) &&
+		return Objects.equals(getGoToMailAddress(), that.getGoToMailAddress()) &&
 		       Objects.equals(getGmailAddress(), that.getGmailAddress());
 	}
 
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(getSanrgMailAddress(), getGmailAddress());
+		return Objects.hash(getGoToMailAddress(), getGmailAddress());
 	}
 }
