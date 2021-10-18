@@ -27,6 +27,7 @@ module com.guicedee.activitymaster.mail {
 	requires com.fasterxml.jackson.databind;
 	requires com.guicedee.activitymaster.sessions;
 	requires com.guicedee.activitymaster.fsdm.client;
+	requires com.entityassist;
 	
 	provides IActivityMasterSystem with com.guicedee.activitymaster.mail.MailSystem;
 	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with com.guicedee.activitymaster.mail.implementations.MailMasterBinder;

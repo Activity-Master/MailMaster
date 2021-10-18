@@ -76,7 +76,7 @@ public class MailImportRunThread
     @Transactional(entityManagerAnnotation = ActivityMasterDB.class)
     public void run() {
         ticket.setLastRunDate(DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss.SSS")
-                .format(LocalDateTime.now()));
+                .format(com.entityassist.RootEntity.getNow()));
         ticket.setPaused(false);
         ticket.setStatus("STARTING");
         get(IMailImportService.class)

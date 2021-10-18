@@ -197,7 +197,7 @@ public class MailImportService
 				}
 				catch (Exception e)
 				{
-					ticket.setLastRunDate(LocalDateTime.now()
+					ticket.setLastRunDate(com.entityassist.RootEntity.getNow()
 					                                   .format(DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss.SSS")));
 				}
 				tickets.add(ticket);
