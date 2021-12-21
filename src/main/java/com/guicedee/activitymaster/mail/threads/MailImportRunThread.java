@@ -1,6 +1,5 @@
 package com.guicedee.activitymaster.mail.threads;
 
-import com.guicedee.activitymaster.fsdm.client.services.annotations.ActivityMasterDB;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.arrangements.IArrangement;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.enterprise.IEnterprise;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.resourceitem.IResourceItem;
@@ -12,11 +11,9 @@ import com.guicedee.activitymaster.mail.services.IMailImportService;
 import com.guicedee.activitymaster.mail.services.dto.MailFoldersStatus;
 import com.guicedee.activitymaster.mail.services.dto.MailImportTicket;
 import com.guicedee.guicedinjection.GuiceContext;
-import com.guicedee.guicedpersistence.db.annotations.Transactional;
 import com.sun.mail.imap.IMAPFolder;
 import jakarta.mail.*;
 
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Level;
@@ -73,7 +70,6 @@ public class MailImportRunThread
 
     @SuppressWarnings("unchecked")
     @Override
-    @Transactional(entityManagerAnnotation = ActivityMasterDB.class)
     public void run() {
         ticket.setLastRunDate(DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss.SSS")
                 .format(com.entityassist.RootEntity.getNow()));
