@@ -11,7 +11,7 @@ import jakarta.mail.MessagingException;
 
 import java.io.Closeable;
 import java.util.List;
-import java.util.UUID;
+
 
 public interface IMailBoxService<J extends IMailBoxService<J>> extends Closeable
 {
@@ -20,14 +20,14 @@ public interface IMailBoxService<J extends IMailBoxService<J>> extends Closeable
 		return new MailboxBoxService(server);
 	}
 
-	IInvolvedParty<?,?> findByEmail(String emailAddress, ISystems<?,?> systems, UUID... identityToken);
+	IInvolvedParty<?,?> findByEmail(String emailAddress, ISystems<?,?> systems, java.util.UUID... identityToken);
 
 	ISystems<?,?> getMailSystem(IEnterprise<?,?> enterprise);
 	UUID getMailUUID(IEnterprise<?,?> enterprise);
 
 	MailboxBoxService login();
 
-	IArrangement<?,?> createArrangement(IInvolvedParty<?,?> ip, String value, UUID... identityToken);
+	IArrangement<?,?> createArrangement(IInvolvedParty<?,?> ip, String value, java.util.UUID... identityToken);
 
 	MailboxBoxService loadFolders() throws MessagingException;
 

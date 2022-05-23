@@ -3,7 +3,7 @@ package com.guicedee.activitymaster.mail.services.dto;
 import com.fasterxml.jackson.annotation.*;
 
 import java.util.Objects;
-import java.util.UUID;
+
 
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.*;
 
@@ -48,7 +48,7 @@ public class MailImportTicket
 		return arrangementId;
 	}
 
-	public MailImportTicket setArrangementId(UUID arrangementId)
+	public MailImportTicket setArrangementId(java.lang.String arrangementId)
 	{
 		this.arrangementId = arrangementId;
 		return this;

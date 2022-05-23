@@ -5,7 +5,7 @@ import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.syste
 import com.guicedee.activitymaster.mail.services.dto.MailImportTicket;
 
 import java.util.List;
-import java.util.UUID;
+
 
 public interface IMailImportService<J extends IMailImportService<J>>
 {

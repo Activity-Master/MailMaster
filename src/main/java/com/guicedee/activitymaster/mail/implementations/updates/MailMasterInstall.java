@@ -13,7 +13,7 @@ import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.guicedinjection.interfaces.JobService;
 import com.guicedee.logger.LogFactory;
 
-import java.util.UUID;
+
 import java.util.concurrent.TimeUnit;
 
 import static com.guicedee.activitymaster.mail.services.classifications.MailSystemClassifications.*;
@@ -43,7 +43,7 @@ public class MailMasterInstall implements ISystemUpdate
 		
 		try
 		{
-			classificationService.find(MailImport, system, token);
+			classificationService.find(MailImport, system, identityToken);
 		}
 		catch (Exception e)
 		{
@@ -53,76 +53,76 @@ public class MailMasterInstall implements ISystemUpdate
 			          .warning("Waiting for all systems to generate their security identities");
 			JobService.getInstance()
 			          .waitForJob("SecurityTokenStore", 5L, TimeUnit.MINUTES);
-			classificationService.create(MailSystemClassifications.MailImport, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			classificationService.create(MailImportFor, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			classificationService.create(TargetUserNameKey, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			classificationService.create(TargetPassKey, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			classificationService.create(SourceUserNameKey, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			classificationService.create(SourcePassKey, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			classificationService.create(FoldersForImport, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			//classificationService.create(CurrentDayOfImport, newSystem.get(enterprise), token).createDefaultSecurity(activityMasterSystem,MailSystem.token);
-			classificationService.create(LastDayOfImport, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			//classificationService.create(CurrentSizeOfImport, newSystem.get(enterprise), token).createDefaultSecurity(activityMasterSystem,MailSystem.token);
-			classificationService.create(ConfirmedSourceMailImport, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			classificationService.create(ConfirmedDestinationMailImport, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
+			classificationService.create(MailSystemClassifications.MailImport, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			classificationService.create(MailImportFor, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			classificationService.create(TargetUserNameKey, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			classificationService.create(TargetPassKey, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			classificationService.create(SourceUserNameKey, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			classificationService.create(SourcePassKey, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			classificationService.create(FoldersForImport, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			//classificationService.create(CurrentDayOfImport, newSystem.get(enterprise), identityToken).createDefaultSecurity(activityMasterSystem,MailSystem.token);
+			classificationService.create(LastDayOfImport, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			//classificationService.create(CurrentSizeOfImport, newSystem.get(enterprise), identityToken).createDefaultSecurity(activityMasterSystem,MailSystem.token);
+			classificationService.create(ConfirmedSourceMailImport, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			classificationService.create(ConfirmedDestinationMailImport, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
 			
 			logProgress("Mail Master", "Creating Mail Folder Fields");
-			classificationService.create(CurrentDayOfImport, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			//classificationService.create(CurrentSizeOfImport, newSystem.get(enterprise), token).createDefaultSecurity(activityMasterSystem,MailSystem.token);
-			classificationService.create(CurrentDaySizeOfImport, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			classificationService.create(TotalCountOfMailImport, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			classificationService.create(CompletedMailImport, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			classificationService.create(CompletedFolderImport, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			classificationService.create(CurrentFolderImport, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
+			classificationService.create(CurrentDayOfImport, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			//classificationService.create(CurrentSizeOfImport, newSystem.get(enterprise), identityToken).createDefaultSecurity(activityMasterSystem,MailSystem.token);
+			classificationService.create(CurrentDaySizeOfImport, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			classificationService.create(TotalCountOfMailImport, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			classificationService.create(CompletedMailImport, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			classificationService.create(CompletedFolderImport, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			classificationService.create(CurrentFolderImport, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
 			
-			classificationService.create(CompletedSizeImport, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			classificationService.create(TotalFoldersForMailImport, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			classificationService.create(TotalSizeForMailImport, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
+			classificationService.create(CompletedSizeImport, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			classificationService.create(TotalFoldersForMailImport, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			classificationService.create(TotalSizeForMailImport, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
 			
-			classificationService.create(JobStartedForMailImport, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			classificationService.create(JobPausedForMailImport, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
+			classificationService.create(JobStartedForMailImport, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			classificationService.create(JobPausedForMailImport, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
 			
 			logProgress("Mail Master", "Creating Mail Progress Fields");
 			
-			classificationService.create(MailImportStage.MailImportCompleted, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			classificationService.create(MailImportStage.MailImportInProgress, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			classificationService.create(MailImportStage.MailImportLoginError, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			classificationService.create(MailImportStage.MailImportNotStarted, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
-			classificationService.create(FolderStatusObject, system, token)
-			                     .createDefaultSecurity(activityMasterSystem, token);
+			classificationService.create(MailImportStage.MailImportCompleted, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			classificationService.create(MailImportStage.MailImportInProgress, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			classificationService.create(MailImportStage.MailImportLoginError, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			classificationService.create(MailImportStage.MailImportNotStarted, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
+			classificationService.create(FolderStatusObject, system, identityToken)
+			                     .createDefaultSecurity(activityMasterSystem, identityToken);
 			
 			logProgress("Mail System", "Checking Arrangement Types", 1);
 			
-			arrangementsService.createArrangementType(MailImportArrangementTypes.MailImport.toString(), system, token);
+			arrangementsService.createArrangementType(MailImportArrangementTypes.MailImport.toString(), system, identityToken);
 			
 			logProgress("Mail System", "Checking Resource Item Types", 1);
 			IResourceItemService<?> resourceItemService = get(IResourceItemService.class);
-			resourceItemService.createType(FolderStatusResourceItem, system, token);
+			resourceItemService.createType(FolderStatusResourceItem, system, identityToken);
 		}
 		logProgress("Mail System", "Checking Mail Import Classifications", 1);
 		

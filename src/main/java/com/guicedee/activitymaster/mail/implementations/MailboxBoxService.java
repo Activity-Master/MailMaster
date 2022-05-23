@@ -63,7 +63,7 @@ public class MailboxBoxService
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public IInvolvedParty<?,?> findByEmail(String emailAddress, ISystems<?,?> systems, UUID... identityToken)
+	public IInvolvedParty<?,?> findByEmail(String emailAddress, ISystems<?,?> systems, java.util.UUID... identityToken)
 	{
 		UUID identity = GuiceContext.get(MailSystem.class)
 		                            .getSystemToken(systems.getEnterprise());
@@ -129,7 +129,7 @@ public class MailboxBoxService
 	}
 
 	@Override
-	public IArrangement<?,?> createArrangement(IInvolvedParty<?,?> ip, String value, UUID... identityToken)
+	public IArrangement<?,?> createArrangement(IInvolvedParty<?,?> ip, String value, java.util.UUID... identityToken)
 	{
 		UUID identity = GuiceContext.get(MailSystem.class)
 		                            .getSystemToken(ip.getEnterprise());

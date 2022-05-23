@@ -22,7 +22,7 @@ import com.guicedee.activitymaster.sessions.services.dto.UserLoginDTO;
 import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.guicedinjection.pairing.Pair;
 
-import java.util.UUID;
+
 
 import static com.guicedee.activitymaster.fsdm.client.services.classifications.DefaultClassifications.*;
 import static com.guicedee.activitymaster.fsdm.client.services.classifications.EventInvolvedPartiesClassifications.*;
@@ -47,17 +47,17 @@ public class MailService
     private IInvolvedPartyService<?> involvedPartyService;
     
     @Override
-    public IInvolvedParty<?,?> findByEmail(String email, ISystems<?,?> systems, UUID... token) {
+    public IInvolvedParty<?,?> findByEmail(String email, ISystems<?,?> systems, java.util.UUID... identityToken) {
         IInvolvedParty<?, ?> party = involvedPartyService.get()
                                                          .builder()
-                                                         .findByIdentificationType(IdentificationTypeEmailAddress.toString(), email, systems, token)
+                                                         .findByIdentificationType(IdentificationTypeEmailAddress.toString(), email, systems, identityToken)
                                                          .get()
                                                          .orElse(null);
         return party;
     }
 
     @Override
-    public ProfileServiceDTO<?> loginUser(UserLoginDTO<?> profileServiceDTO, String enterpriseName, UUID... identityToken) throws ProfileServiceException {
+    public ProfileServiceDTO<?> loginUser(UserLoginDTO<?> profileServiceDTO, String enterpriseName, java.util.UUID... identityToken) throws ProfileServiceException {
 
         profileServiceDTO.setEnterprise(enterprise);
         UUID identity = GuiceContext.get(MailSystem.class)
@@ -128,7 +128,7 @@ public class MailService
         return profileServiceDTO;
     }
 
-    IInvolvedParty<?,?> registerVisitor(UserRegistrationDTO<?> userRegistrationDTO, String  enterpriseName, UUID... identityToken) throws UserExistsException, WaitingForConfirmationKeyException {
+    IInvolvedParty<?,?> registerVisitor(UserRegistrationDTO<?> userRegistrationDTO, String  enterpriseName, java.util.UUID... identityToken) throws UserExistsException, WaitingForConfirmationKeyException {
 
         UUID identity = GuiceContext.get(MailSystem.class)
                 .getSystemToken(enterpriseName);
@@ -158,7 +158,7 @@ public class MailService
         return newIp;
     }
 
-    IInvolvedParty<?,?> createNewVisitor(IEvent<?,?> event, UserRegistrationDTO<?> profileServiceDTO, IEnterprise<?,?> enterprise, ISystems<?,?> profileSystem, UUID... identityToken) {
+    IInvolvedParty<?,?> createNewVisitor(IEvent<?,?> event, UserRegistrationDTO<?> profileServiceDTO, IEnterprise<?,?> enterprise, ISystems<?,?> profileSystem, java.util.UUID... identityToken) {
         IInvolvedParty<?,?> newIp;
         //Create new guest record
         Pair<String, String> guestIDType = new Pair<>();

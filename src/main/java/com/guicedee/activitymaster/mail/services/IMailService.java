@@ -6,13 +6,13 @@ import com.guicedee.activitymaster.profiles.dto.ProfileServiceDTO;
 import com.guicedee.activitymaster.profiles.exceptions.ProfileServiceException;
 import com.guicedee.activitymaster.sessions.services.dto.UserLoginDTO;
 
-import java.util.UUID;
+
 
 public interface IMailService<J extends IMailService<J>>
 {
 	String MailSystemName = "Mail Master";
 	
-	IInvolvedParty<?,?> findByEmail(String email, ISystems<?,?> enterprise, UUID... token);
+	IInvolvedParty<?,?> findByEmail(String email, ISystems<?,?> enterprise, java.util.UUID... identityToken);
 
-	ProfileServiceDTO<?> loginUser(UserLoginDTO<?> profileServiceDTO, String enterpriseName, UUID... identityToken) throws ProfileServiceException;
+	ProfileServiceDTO<?> loginUser(UserLoginDTO<?> profileServiceDTO, String enterpriseName, java.util.UUID... identityToken) throws ProfileServiceException;
 }
