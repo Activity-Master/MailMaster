@@ -27,8 +27,6 @@ import com.guicedee.guicedinjection.pairing.Pair;
 import static com.guicedee.activitymaster.fsdm.client.services.classifications.DefaultClassifications.*;
 import static com.guicedee.activitymaster.fsdm.client.services.classifications.EventInvolvedPartiesClassifications.*;
 import static com.guicedee.activitymaster.fsdm.client.services.classifications.SecurityTokenClassifications.*;
-import static com.guicedee.activitymaster.fsdm.client.services.classifications.types.IdentificationTypes.*;
-import static com.guicedee.activitymaster.fsdm.client.services.classifications.types.NameTypes.*;
 import static com.guicedee.activitymaster.mail.roles.MailUserRoles.*;
 import static com.guicedee.activitymaster.profiles.enumerations.ProfileClassifications.*;
 import static com.guicedee.activitymaster.profiles.enumerations.ProfileEventTypes.*;
