@@ -32,7 +32,7 @@ import static com.guicedee.activitymaster.profiles.enumerations.ProfileClassific
 import static com.guicedee.activitymaster.profiles.enumerations.ProfileEventTypes.*;
 import static com.guicedee.activitymaster.profiles.enumerations.ProfileIdentificationTypes.*;
 import static com.guicedee.activitymaster.profiles.services.enumerations.UserRoles.*;
-import static com.guicedee.guicedinjection.GuiceContext.*;
+import static com.guicedee.client.IGuiceContext.*;
 
 @SuppressWarnings("Duplicates")
 public class MailService
@@ -58,9 +58,9 @@ public class MailService
     public ProfileServiceDTO<?> loginUser(UserLoginDTO<?> profileServiceDTO, String enterpriseName, java.util.UUID... identityToken) throws ProfileServiceException {
 
         profileServiceDTO.setEnterprise(enterprise);
-        UUID identity = GuiceContext.get(MailSystem.class)
+        UUID identity = com.guicedee.client.IGuiceContext.get(MailSystem.class)
                 .getSystemToken(enterpriseName);
-        ISystems<?,?> mailSystem = GuiceContext.get(MailSystem.class)
+        ISystems<?,?> mailSystem = com.guicedee.client.IGuiceContext.get(MailSystem.class)
                                                .getSystem(enterpriseName);
 
         if ((identityToken == null || identityToken.length == 0) && profileServiceDTO.getIdentityToken() == null) {
@@ -128,12 +128,12 @@ public class MailService
 
     IInvolvedParty<?,?> registerVisitor(UserRegistrationDTO<?> userRegistrationDTO, String  enterpriseName, java.util.UUID... identityToken) throws UserExistsException, WaitingForConfirmationKeyException {
 
-        UUID identity = GuiceContext.get(MailSystem.class)
+        UUID identity = com.guicedee.client.IGuiceContext.get(MailSystem.class)
                 .getSystemToken(enterpriseName);
-        ISystems<?,?> mailSystem = GuiceContext.get(MailSystem.class)
+        ISystems<?,?> mailSystem = com.guicedee.client.IGuiceContext.get(MailSystem.class)
                 .getSystem(enterpriseName);
 
-        IEvent<?,?> registerEvent = GuiceContext.get(IEventService.class)
+        IEvent<?,?> registerEvent = com.guicedee.client.IGuiceContext.get(IEventService.class)
                 .createEvent(UserRegistered.toString(), mailSystem, identity);
     
         IInvolvedParty<?, ?> ipExists = involvedPartyService.get()
@@ -167,7 +167,7 @@ public class MailService
 
         newIp = involvedPartyService.create(profileSystem, guestIDType, true, identityToken);
 
-        ISecurityToken<?,?> visitorsGroup = GuiceContext.get(ISecurityTokenService.class)
+        ISecurityToken<?,?> visitorsGroup = com.guicedee.client.IGuiceContext.get(ISecurityTokenService.class)
                                                       .getRegisteredGuestsFolder(profileSystem, identityToken);
 
         ISecurityToken<?,?> myToken = get(ISecurityTokenService.class).create(Identity.toString(),
@@ -186,9 +186,9 @@ public class MailService
                 .toString(), profileSystem, identityToken);
 
         profileServiceDTO.setIdentityToken(newIp.getId());
-        UUID identity = GuiceContext.get(MailSystem.class)
+        UUID identity = com.guicedee.client.IGuiceContext.get(MailSystem.class)
                 .getSystemToken(enterprise);
-        ISystems<?,?> mailSystem = GuiceContext.get(MailSystem.class)
+        ISystems<?,?> mailSystem = com.guicedee.client.IGuiceContext.get(MailSystem.class)
                 .getSystem(enterprise);
 
         get(IRolesService.class).addRole(newIp, MailUserRoles.MailUser.toString(), profileServiceDTO, profileSystem, identity);

@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 import static com.guicedee.activitymaster.mail.services.classifications.MailSystemClassifications.*;
 import static com.guicedee.activitymaster.mail.services.classifications.MailSystemResourceItemClassifications.*;
 import static com.guicedee.activitymaster.mail.services.enumerations.MailImportResourceItemTypes.*;
-import static com.guicedee.guicedinjection.GuiceContext.*;
+import static com.guicedee.client.IGuiceContext.*;
 
 @SortedUpdate(sortOrder = 1500, taskCount = 6)
 public class MailMasterInstall implements ISystemUpdate
@@ -36,7 +36,7 @@ public class MailMasterInstall implements ISystemUpdate
 		IClassificationService<?> classificationService = get(IClassificationService.class);
 		ISystems<?,?> activityMasterSystem = get(ISystemsService.class)
 				.getActivityMaster(enterprise);
-		MailSystem systemM = GuiceContext.get(MailSystem.class);
+		MailSystem systemM = com.guicedee.client.IGuiceContext.get(MailSystem.class);
 		ISystems<?,?> system = systemM.getSystem(enterprise);
 		UUID token = systemM.getSystemToken(enterprise);
 		IArrangementsService<?> arrangementsService = get(IArrangementsService.class);

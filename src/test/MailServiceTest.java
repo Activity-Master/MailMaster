@@ -29,7 +29,7 @@ class MailServiceTest
 		LogFactory.configureConsoleColourOutput(Level.FINE);
 		LogColourFormatter.setRenderBlack(false);
 		HazelcastConfigHandler.startLocal = true;
-		GuiceContext.inject();
+		com.guicedee.client.IGuiceContext.instance().inject();
 
 
 		SaNrgMailServer sanrg = new SaNrgMailServer("tester@sanrg.net", "12345678");

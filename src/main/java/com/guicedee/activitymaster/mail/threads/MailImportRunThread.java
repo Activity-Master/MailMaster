@@ -20,7 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.guicedee.activitymaster.mail.services.classifications.MailSystemResourceItemClassifications.*;
-import static com.guicedee.guicedinjection.GuiceContext.*;
+import static com.guicedee.client.IGuiceContext.*;
 
 public class MailImportRunThread
         extends Thread
@@ -181,9 +181,9 @@ public class MailImportRunThread
             String key = entry.getKey();
             String value = entry.getValue();
             MailFoldersStatus foldersStatus = new MailFoldersStatus();
-            UUID identity = GuiceContext.get(MailSystem.class)
+            UUID identity = com.guicedee.client.IGuiceContext.get(MailSystem.class)
                     .getSystemToken(enterprise);
-            ISystems<?,?> mailSystem = GuiceContext.get(MailSystem.class)
+            ISystems<?,?> mailSystem = com.guicedee.client.IGuiceContext.get(MailSystem.class)
                                                    .getSystem(enterprise);
 
             var objects = arrangement.findResourceItemsAll(FolderStatusObject.toString(), key,mailSystem,false,identity);

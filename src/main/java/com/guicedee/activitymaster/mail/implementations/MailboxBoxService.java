@@ -65,9 +65,9 @@ public class MailboxBoxService
 	@Override
 	public IInvolvedParty<?,?> findByEmail(String emailAddress, ISystems<?,?> systems, java.util.UUID... identityToken)
 	{
-		UUID identity = GuiceContext.get(MailSystem.class)
+		UUID identity = com.guicedee.client.IGuiceContext.get(MailSystem.class)
 		                            .getSystemToken(systems.getEnterprise());
-		IInvolvedPartyService<?> iInvolvedPartyService = GuiceContext.get(IInvolvedPartyService.class);
+		IInvolvedPartyService<?> iInvolvedPartyService = com.guicedee.client.IGuiceContext.get(IInvolvedPartyService.class);
 		IInvolvedParty<?, ?> involvedPartyService = iInvolvedPartyService.get()
 		                                                                 .builder()
 		                                                                 .findByIdentificationType(IdentificationTypes.IdentificationTypeEmailAddress.toString(),
@@ -82,14 +82,14 @@ public class MailboxBoxService
 	@Override
 	public ISystems<?,?> getMailSystem(IEnterprise<?,?> enterprise)
 	{
-		return GuiceContext.get(MailSystem.class)
+		return com.guicedee.client.IGuiceContext.get(MailSystem.class)
 		                   .getSystem(enterprise);
 	}
 
 	@Override
 	public UUID getMailUUID(IEnterprise<?,?> enterprise)
 	{
-		return GuiceContext.get(MailSystem.class)
+		return com.guicedee.client.IGuiceContext.get(MailSystem.class)
 		                   .getSystemToken(enterprise);
 	}
 
@@ -131,12 +131,12 @@ public class MailboxBoxService
 	@Override
 	public IArrangement<?,?> createArrangement(IInvolvedParty<?,?> ip, String value, java.util.UUID... identityToken)
 	{
-		UUID identity = GuiceContext.get(MailSystem.class)
+		UUID identity = com.guicedee.client.IGuiceContext.get(MailSystem.class)
 		                            .getSystemToken(ip.getEnterprise());
-		ISystems<?,?> mailSystem = GuiceContext.get(MailSystem.class)
+		ISystems<?,?> mailSystem = com.guicedee.client.IGuiceContext.get(MailSystem.class)
 		                                     .getSystem(ip.getEnterprise());
 
-		IArrangementsService<?> arrangementsService = GuiceContext.get(IArrangementsService.class);
+		IArrangementsService<?> arrangementsService = com.guicedee.client.IGuiceContext.get(IArrangementsService.class);
 		IArrangement<?,?> a = arrangementsService.create(MailImport.toString(),MailImportFor.toString(),value, mailSystem, identityToken);
 		a.addInvolvedParty(ip, MailSystemClassifications.MailImport.toString(), value, mailSystem, identity);
 

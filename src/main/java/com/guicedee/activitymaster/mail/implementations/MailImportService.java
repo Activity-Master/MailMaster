@@ -22,7 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.guicedee.activitymaster.mail.services.classifications.MailSystemClassifications.*;
-import static com.guicedee.guicedinjection.GuiceContext.*;
+import static com.guicedee.client.IGuiceContext.*;
 
 public class MailImportService
 		implements IMailImportService<MailImportService>
@@ -36,9 +36,9 @@ public class MailImportService
 	@Override
 	public List<MailImportTicket> fromArrangements(List<IArrangement<?,?>> arrangements, String enterpriseName)
 	{
-		UUID uuid = GuiceContext.get(MailSystem.class)
+		UUID uuid = com.guicedee.client.IGuiceContext.get(MailSystem.class)
 		                        .getSystemToken(enterpriseName);
-		ISystems<?,?> mailSystem = GuiceContext.get(MailSystem.class)
+		ISystems<?,?> mailSystem = com.guicedee.client.IGuiceContext.get(MailSystem.class)
 		                                     .getSystem(enterpriseName);
 
 		List<MailImportTicket> tickets = new ArrayList<>();
@@ -224,9 +224,9 @@ public class MailImportService
 	{
 		IEnterprise<?,?> enterprise = get(IEnterpriseService.class)
 				                            .getEnterprise(enterpriseName);
-		UUID uuid = GuiceContext.get(MailSystem.class)
+		UUID uuid = com.guicedee.client.IGuiceContext.get(MailSystem.class)
 		                        .getSystemToken(enterpriseName);
-		ISystems<?,?> mailSystem = GuiceContext.get(MailSystem.class)
+		ISystems<?,?> mailSystem = com.guicedee.client.IGuiceContext.get(MailSystem.class)
 		                                     .getSystem(enterpriseName);
 		IArrangement<?,?> arrangement = get(IArrangementsService.class).find(mailImportTicket.getArrangementId(), mailSystem, uuid);
 
@@ -251,9 +251,9 @@ public class MailImportService
 	{
 		IEnterprise<?,?> enterprise = get(IEnterpriseService.class)
 				                            .getEnterprise(enterpriseName);
-		UUID identity = GuiceContext.get(MailSystem.class)
+		UUID identity = com.guicedee.client.IGuiceContext.get(MailSystem.class)
 		                            .getSystemToken(enterpriseName);
-		ISystems<?,?> mailSystem = GuiceContext.get(MailSystem.class)
+		ISystems<?,?> mailSystem = com.guicedee.client.IGuiceContext.get(MailSystem.class)
 		                                     .getSystem(enterpriseName);
 	}
 
