@@ -37,11 +37,13 @@
             <groupId>com.guicedee.services</groupId>
             <artifactId>uadetector-core</artifactId>
         </dependency>
+<!--
 
         <dependency>
             <groupId>com.guicedee.servlets</groupId>
             <artifactId>guiced-servlets</artifactId>
         </dependency>
+-->
 
         <dependency>
             <groupId>com.guicedee.services</groupId>
