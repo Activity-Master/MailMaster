@@ -12,6 +12,7 @@ import com.guicedee.activitymaster.mail.services.enumerations.MailImportStage;
 import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.guicedinjection.interfaces.JobService;
 import com.guicedee.logger.LogFactory;
+import io.vertx.core.Future;
 
 
 import java.util.concurrent.TimeUnit;
@@ -25,11 +26,12 @@ import static com.guicedee.client.IGuiceContext.*;
 public class MailMasterInstall implements ISystemUpdate
 {
 	@Override
-	public void update(IEnterprise<?,?> enterprise)
+	public Future<Boolean> update(IEnterprise<?,?> enterprise)
 	{
 		createClassifications(enterprise);
+		return Future.succeededFuture(true);
 	}
-	
+
 	@SuppressWarnings("Duplicates")
 	private void createClassifications(IEnterprise<?,?> enterprise)
 	{
@@ -40,7 +42,7 @@ public class MailMasterInstall implements ISystemUpdate
 		ISystems<?,?> system = systemM.getSystem(enterprise);
 		UUID token = systemM.getSystemToken(enterprise);
 		IArrangementsService<?> arrangementsService = get(IArrangementsService.class);
-		
+
 		try
 		{
 			classificationService.find(MailImport, system, identityToken);
@@ -48,7 +50,7 @@ public class MailMasterInstall implements ISystemUpdate
 		catch (Exception e)
 		{
 			logProgress("Mail Master", "Creating Mail Import Fields");
-			
+
 			LogFactory.getLog("MailSystem")
 			          .warning("Waiting for all systems to generate their security identities");
 			JobService.getInstance()
@@ -75,7 +77,7 @@ public class MailMasterInstall implements ISystemUpdate
 			                     .createDefaultSecurity(activityMasterSystem, identityToken);
 			classificationService.create(ConfirmedDestinationMailImport, system, identityToken)
 			                     .createDefaultSecurity(activityMasterSystem, identityToken);
-			
+
 			logProgress("Mail Master", "Creating Mail Folder Fields");
 			classificationService.create(CurrentDayOfImport, system, identityToken)
 			                     .createDefaultSecurity(activityMasterSystem, identityToken);
@@ -90,21 +92,21 @@ public class MailMasterInstall implements ISystemUpdate
 			                     .createDefaultSecurity(activityMasterSystem, identityToken);
 			classificationService.create(CurrentFolderImport, system, identityToken)
 			                     .createDefaultSecurity(activityMasterSystem, identityToken);
-			
+
 			classificationService.create(CompletedSizeImport, system, identityToken)
 			                     .createDefaultSecurity(activityMasterSystem, identityToken);
 			classificationService.create(TotalFoldersForMailImport, system, identityToken)
 			                     .createDefaultSecurity(activityMasterSystem, identityToken);
 			classificationService.create(TotalSizeForMailImport, system, identityToken)
 			                     .createDefaultSecurity(activityMasterSystem, identityToken);
-			
+
 			classificationService.create(JobStartedForMailImport, system, identityToken)
 			                     .createDefaultSecurity(activityMasterSystem, identityToken);
 			classificationService.create(JobPausedForMailImport, system, identityToken)
 			                     .createDefaultSecurity(activityMasterSystem, identityToken);
-			
+
 			logProgress("Mail Master", "Creating Mail Progress Fields");
-			
+
 			classificationService.create(MailImportStage.MailImportCompleted, system, identityToken)
 			                     .createDefaultSecurity(activityMasterSystem, identityToken);
 			classificationService.create(MailImportStage.MailImportInProgress, system, identityToken)
@@ -115,16 +117,16 @@ public class MailMasterInstall implements ISystemUpdate
 			                     .createDefaultSecurity(activityMasterSystem, identityToken);
 			classificationService.create(FolderStatusObject, system, identityToken)
 			                     .createDefaultSecurity(activityMasterSystem, identityToken);
-			
+
 			logProgress("Mail System", "Checking Arrangement Types", 1);
-			
+
 			arrangementsService.createArrangementType(MailImportArrangementTypes.MailImport.toString(), system, identityToken);
-			
+
 			logProgress("Mail System", "Checking Resource Item Types", 1);
 			IResourceItemService<?> resourceItemService = get(IResourceItemService.class);
 			resourceItemService.createType(FolderStatusResourceItem, system, identityToken);
 		}
 		logProgress("Mail System", "Checking Mail Import Classifications", 1);
-		
+
 	}
 }
