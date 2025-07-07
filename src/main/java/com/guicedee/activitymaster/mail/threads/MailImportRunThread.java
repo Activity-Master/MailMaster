@@ -72,7 +72,7 @@ public class MailImportRunThread
     @Override
     public void run() {
         ticket.setLastRunDate(DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss.SSS")
-                .format(com.entityassist.querybuilder.QueryBuilderSCD.convertToUTCDateTime(com.entityassist.RootEntity.getNow())));
+                .format(convertToUTCDateTime(com.entityassist.RootEntity.getNow())));
         ticket.setPaused(false);
         ticket.setStatus("STARTING");
         get(IMailImportService.class)
