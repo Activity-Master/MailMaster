@@ -37,10 +37,7 @@ import static com.guicedee.client.IGuiceContext.*;
 @SuppressWarnings("Duplicates")
 public class MailService
         implements IMailService<MailService> {
-    
-    @Inject
-    private IEnterprise<?,?> enterprise;
-    
+
     @Inject
     private IInvolvedPartyService<?> involvedPartyService;
     

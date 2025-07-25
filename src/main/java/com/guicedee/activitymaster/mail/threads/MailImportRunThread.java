@@ -30,7 +30,6 @@ public class MailImportRunThread
     private IArrangement<?,?> arrangement;
 
     private MailImportTicket ticket;
-    private IEnterprise<?,?> enterprise;
 
     private MailboxBoxService source;
     private MailboxBoxService dest;
