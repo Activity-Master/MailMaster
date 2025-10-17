@@ -9,7 +9,7 @@ import com.jwebmp.guicedhazelcast.implementations.HazelcastPreStartup;
 import com.guicedee.guicedinjection.GuiceContext;
 import com.guicedee.logger.LogFactory;
 import com.jwebmp.logger.logging.LogColourFormatter;
-import lombok.extern.java.Log;
+import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.Test;
 
 import jakarta.mail.MessagingException;
@@ -19,7 +19,7 @@ import java.util.logging.Level;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Log
+@Log4j2
 class MailServiceTest
 {
 
@@ -46,11 +46,11 @@ class MailServiceTest
 		}
 		catch (IOException e)
 		{
-			log.log(Level.SEVERE, "OOPS", e);
+			log.error("OOPS", e);
 		}
 		catch (MessagingException e)
 		{
-			log.log(Level.SEVERE, "OOPS", e);
+			log.error("OOPS", e);
 		}
 	}
 }
