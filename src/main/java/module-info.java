@@ -30,7 +30,7 @@ module com.guicedee.activitymaster.mail {
 	requires com.entityassist;
 	
 	provides IActivityMasterSystem with com.guicedee.activitymaster.mail.MailSystem;
-	provides com.guicedee.guicedinjection.interfaces.IGuiceModule with com.guicedee.activitymaster.mail.implementations.MailMasterBinder;
+	provides com.guicedee.client.services.lifecycle.IGuiceModule with com.guicedee.activitymaster.mail.implementations.MailMasterBinder;
 
 	opens com.guicedee.activitymaster.mail;
 	exports com.guicedee.activitymaster.mail.servers;
