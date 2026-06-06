@@ -1,4 +1,4 @@
-import com.guicedee.activitymaster.fsdm.client.services.systems.IActivityMasterSystem;
+import com.guicedee.activitymaster.fsdm.client.services.systems.IMasterSystem;
 
 module com.guicedee.activitymaster.mail {
 
