@@ -2,8 +2,8 @@ package com.guicedee.activitymaster.mail.services.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.Objects;
 
@@ -29,7 +29,7 @@ public class MailFoldersStatus
 		{
 			return new ObjectMapper().writeValueAsString(this);
 		}
-		catch (JsonProcessingException e)
+		catch (JacksonException e)
 		{
 			return "CANNOT SERIALIZE MAIL FOLDER STATUS - " + getFolderName();
 		}

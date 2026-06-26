@@ -24,7 +24,7 @@ module com.guicedee.activitymaster.mail {
 	requires com.google.common;
 
 	requires com.fasterxml.jackson.annotation;
-	requires com.fasterxml.jackson.databind;
+	requires tools.jackson.databind;
 	requires com.guicedee.activitymaster.sessions;
 	requires com.guicedee.activitymaster.fsdm.client;
 	requires com.entityassist;
@@ -40,8 +40,8 @@ module com.guicedee.activitymaster.mail {
 	exports com.guicedee.activitymaster.mail.services.classifications;
 	exports com.guicedee.activitymaster.mail.services.dto;
 
-	opens com.guicedee.activitymaster.mail.services.dto to com.fasterxml.jackson.databind;
-	opens com.guicedee.activitymaster.mail.implementations to com.fasterxml.jackson.databind, com.google.guice;
+	opens com.guicedee.activitymaster.mail.services.dto to tools.jackson.databind;
+	opens com.guicedee.activitymaster.mail.implementations to tools.jackson.databind, com.google.guice;
 	exports com.guicedee.activitymaster.mail.importer;
 	exports com.guicedee.activitymaster.mail.threads;
 	exports com.guicedee.activitymaster.mail.roles;
