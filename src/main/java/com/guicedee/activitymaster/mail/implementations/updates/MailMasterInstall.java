@@ -1,134 +1,126 @@
 package com.guicedee.activitymaster.mail.implementations.updates;
 
-import com.guicedee.activitymaster.fsdm.client.services.*;
+import com.guicedee.activitymaster.fsdm.client.services.IActivityMasterService;
+import com.guicedee.activitymaster.fsdm.client.services.IArrangementsService;
+import com.guicedee.activitymaster.fsdm.client.services.IClassificationService;
+import com.guicedee.activitymaster.fsdm.client.services.IEventService;
+import com.guicedee.activitymaster.fsdm.client.services.IResourceItemService;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.enterprise.IEnterprise;
 import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
 import com.guicedee.activitymaster.fsdm.client.services.systems.ISystemUpdate;
 import com.guicedee.activitymaster.fsdm.client.services.systems.SortedUpdate;
-import com.guicedee.activitymaster.mail.MailSystem;
-import com.guicedee.activitymaster.mail.services.classifications.MailSystemClassifications;
-import com.guicedee.activitymaster.mail.services.enumerations.MailImportArrangementTypes;
-import com.guicedee.activitymaster.mail.services.enumerations.MailImportStage;
-import com.guicedee.logger.LogFactory;
+import com.guicedee.activitymaster.mail.services.classifications.MailClassifications;
+import com.guicedee.activitymaster.mail.services.enumerations.MailArrangementTypes;
+import com.guicedee.activitymaster.mail.services.enumerations.MailEventTypes;
+import com.guicedee.activitymaster.mail.services.enumerations.MailResourceItemTypes;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import lombok.extern.log4j.Log4j2;
 import org.hibernate.reactive.mutiny.Mutiny;
 
-import static com.guicedee.activitymaster.mail.services.classifications.MailSystemClassifications.*;
-import static com.guicedee.activitymaster.mail.services.classifications.MailSystemResourceItemClassifications.*;
-import static com.guicedee.activitymaster.mail.services.enumerations.MailImportResourceItemTypes.*;
-import static com.guicedee.client.IGuiceContext.*;
+import java.util.UUID;
 
-@SortedUpdate(sortOrder = 1500, taskCount = 6)
+import static com.guicedee.activitymaster.mail.services.IMailFsdmService.MailSystemName;
+import static com.guicedee.client.IGuiceContext.get;
+
+/**
+ * Installs the Mail Master taxonomy into a new enterprise: the mail classifications (relationship
+ * roles and metadata fields), the mail event types ({@code MailReceived} / {@code MailSent}), the
+ * {@code Mailbox} arrangement type and the {@code MailMessage} / {@code MailAttachment} resource-item
+ * types.
+ * <p>
+ * Only the lightweight taxonomy is created here — never bulk data.
+ */
+@SortedUpdate(sortOrder = 1500, taskCount = 4)
 @Log4j2
 public class MailMasterInstall implements ISystemUpdate
 {
 	@Override
-	public Uni<Boolean> update(Mutiny.Session session, IEnterprise<?,?> enterprise)
+	public Uni<Boolean> update(Mutiny.Session session, IEnterprise<?, ?> enterprise)
 	{
-		log.info("Starting mail master installation");
-		return createClassifications(session, enterprise)
-			.onFailure().invoke(error -> log.error("Error during mail master installation: {}", error.getMessage(), error))
-			.onItem().invoke(() -> log.info("Mail master installation completed successfully"));
+		log.info("Installing Mail Master taxonomy for enterprise {}", enterprise.getName());
+		return IActivityMasterService.getISystem(session, MailSystemName, enterprise)
+				.chain(system -> IActivityMasterService.getISystemToken(session, MailSystemName, enterprise)
+						.chain(token -> createTaxonomy(session, system, token)))
+				.onFailure().invoke(error -> log.error("Mail Master installation failed: {}", error.getMessage(), error))
+				.replaceWith(Boolean.TRUE);
 	}
 
-	private Uni<Boolean> createClassifications(Mutiny.Session session, IEnterprise<?,?> enterprise)
+	private Uni<Void> createTaxonomy(Mutiny.Session session, ISystems<?, ?> system, UUID token)
 	{
 		IClassificationService<?> classificationService = get(IClassificationService.class);
-		ISystems<?,?> activityMasterSystem = get(ISystemsService.class)
-				.getActivityMaster(enterprise);
-		MailSystem systemM = com.guicedee.client.IGuiceContext.get(MailSystem.class);
-		ISystems<?,?> system = systemM.getSystem(enterprise);
-		UUID token = systemM.getSystemToken(enterprise);
+		IEventService<?> eventService = get(IEventService.class);
 		IArrangementsService<?> arrangementsService = get(IArrangementsService.class);
+		IResourceItemService<?> resourceItemService = get(IResourceItemService.class);
 
-		// First check if classifications already exist
-		return classificationService.find(session, MailImport, system, identityToken)
-			.onItem().invoke(() -> log.info("Mail import classifications already exist, skipping creation"))
-			.onFailure().recoverWithUni(() -> {
-				// Classifications don't exist, create them
-				logProgress("Mail Master", "Creating Mail Import Fields");
-				
-				LogFactory.getLog("MailSystem")
-						.warning("Waiting for all systems to generate their security identities");
-				
-				// Start the sequential chain of classification creation
-				return classificationService.create(session, MailSystemClassifications.MailImport, system, identityToken)
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, MailImportFor, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, TargetUserNameKey, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, TargetPassKey, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, SourceUserNameKey, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, SourcePassKey, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, FoldersForImport, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, LastDayOfImport, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, ConfirmedSourceMailImport, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, ConfirmedDestinationMailImport, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					
-					.chain(() -> {
-						logProgress("Mail Master", "Creating Mail Folder Fields");
-						return classificationService.create(session, CurrentDayOfImport, system, identityToken);
-					})
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, CurrentDaySizeOfImport, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, TotalCountOfMailImport, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, CompletedMailImport, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, CompletedFolderImport, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, CurrentFolderImport, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, CompletedSizeImport, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, TotalFoldersForMailImport, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, TotalSizeForMailImport, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, JobStartedForMailImport, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, JobPausedForMailImport, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					
-					.chain(() -> {
-						logProgress("Mail Master", "Creating Mail Progress Fields");
-						return classificationService.create(session, MailImportStage.MailImportCompleted, system, identityToken);
-					})
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, MailImportStage.MailImportInProgress, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, MailImportStage.MailImportLoginError, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, MailImportStage.MailImportNotStarted, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					.chain(() -> classificationService.create(session, FolderStatusObject, system, identityToken))
-					.chain(classification -> classification.createDefaultSecurity(session, activityMasterSystem, identityToken))
-					
-					.chain(() -> {
-						logProgress("Mail System", "Checking Arrangement Types", 1);
-						return arrangementsService.createArrangementType(session, MailImportArrangementTypes.MailImport.toString(), system, identityToken);
-					})
-					
-					.chain(() -> {
-						logProgress("Mail System", "Checking Resource Item Types", 1);
-						IResourceItemService<?> resourceItemService = get(IResourceItemService.class);
-						return resourceItemService.createType(session, FolderStatusResourceItem, system, identityToken);
-					})
-					.map(result -> true);
-			})
-			.chain(() -> {
-				logProgress("Mail System", "Checking Mail Import Classifications", 1);
-				return Uni.createFrom().item(true);
-			});
+		Uni<Void> chain = Uni.createFrom().voidItem();
+
+		logProgress("Mail Master", "Creating mail classifications");
+		for (MailClassifications classification : MailClassifications.values())
+		{
+			chain = chain.chain(() -> classificationService.create(session, classification, system, token).replaceWithVoid());
+		}
+
+		chain = chain
+				.chain(() -> {
+					logProgress("Mail Master", "Creating mail event types", 1);
+					return eventService.createEventType(session, MailEventTypes.MailReceived, system, token).replaceWithVoid();
+				})
+				.chain(() -> eventService.createEventType(session, MailEventTypes.MailSent, system, token).replaceWithVoid())
+				.chain(() -> {
+					logProgress("Mail Master", "Creating mailbox arrangement type", 1);
+					return arrangementsService.createArrangementType(session, MailArrangementTypes.Mailbox, system, token).replaceWithVoid();
+				})
+				.chain(() -> {
+					logProgress("Mail Master", "Creating mail resource item types", 1);
+					return resourceItemService.createType(session, MailResourceItemTypes.MailMessage, system, token).replaceWithVoid();
+				})
+				.chain(() -> resourceItemService.createType(session, MailResourceItemTypes.MailAttachment, system, token).replaceWithVoid());
+
+		return chain;
+	}
+
+	/** Stateless twin of {@link #update(Mutiny.Session, IEnterprise)}. */
+	@Override
+	public Uni<Boolean> update(Mutiny.StatelessSession session, IEnterprise<?, ?> enterprise)
+	{
+		log.info("Installing Mail Master taxonomy for enterprise {} (stateless)", enterprise.getName());
+		return IActivityMasterService.getISystem(session, MailSystemName, enterprise)
+				.chain(system -> IActivityMasterService.getISystemToken(session, MailSystemName, enterprise)
+						.chain(token -> createTaxonomy(session, system, token)))
+				.onFailure().invoke(error -> log.error("Mail Master installation failed (stateless): {}", error.getMessage(), error))
+				.replaceWith(Boolean.TRUE);
+	}
+
+	private Uni<Void> createTaxonomy(Mutiny.StatelessSession session, ISystems<?, ?> system, UUID token)
+	{
+		IClassificationService<?> classificationService = get(IClassificationService.class);
+		IEventService<?> eventService = get(IEventService.class);
+		IArrangementsService<?> arrangementsService = get(IArrangementsService.class);
+		IResourceItemService<?> resourceItemService = get(IResourceItemService.class);
+
+		logProgress("Mail Master", "Creating mail classifications");
+		// Sequential (concatenated, never merged) create of every mail classification — one statement at a
+		// time on the single reactive connection, honouring the "one action per session" rule.
+		return Multi.createFrom().items(MailClassifications.values())
+				.onItem().transformToUniAndConcatenate(c -> classificationService.create(session, c, system, token))
+				.collect().last()
+				.chain(() -> {
+					logProgress("Mail Master", "Creating mail event types", 1);
+					return eventService.createEventType(session, MailEventTypes.MailReceived, system, token).replaceWithVoid();
+				})
+				.chain(() -> eventService.createEventType(session, MailEventTypes.MailSent, system, token).replaceWithVoid())
+				.chain(() -> {
+					logProgress("Mail Master", "Creating mailbox arrangement type", 1);
+					return arrangementsService.createArrangementType(session, MailArrangementTypes.Mailbox, system, token).replaceWithVoid();
+				})
+				.chain(() -> {
+					logProgress("Mail Master", "Creating mail resource item types", 1);
+					return resourceItemService.createType(session, MailResourceItemTypes.MailMessage, system, token).replaceWithVoid();
+				})
+				.chain(() -> resourceItemService.createType(session, MailResourceItemTypes.MailAttachment, system, token).replaceWithVoid());
 	}
 }
+
+
+

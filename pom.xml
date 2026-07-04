@@ -19,47 +19,93 @@
 
     <dependencies>
 
+        <!-- Reactive SMTP transport: the Vert.x mail client (via the GuicedEE wrapper) -->
         <dependency>
-            <groupId>com.guicedee.modules.services</groupId>
-            <artifactId>jakarta.mail</artifactId>
-            <type>jar</type>
+            <groupId>com.guicedee</groupId>
+            <artifactId>mail-client</artifactId>
+            <version>${guicedee.version}</version>
+        </dependency>
+        <!-- Promote the Vert.x mail client to compile scope (it is otherwise pulled in as test only). -->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-mail-client</artifactId>
+            <version>5.1.3</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-core</artifactId>
         </dependency>
 
+        <!-- Jakarta Mail API (MIME build/parse) + Angus implementation (IMAP/POP3/SMTP providers) -->
+        <dependency>
+            <groupId>jakarta.mail</groupId>
+            <artifactId>jakarta.mail-api</artifactId>
+            <version>2.1.5</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
+            <version>2.1.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.angus</groupId>
+            <artifactId>angus-mail</artifactId>
+            <version>2.0.5</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Activity Master FSDM core (warehouse model + reactive domain services) -->
         <dependency>
             <groupId>com.activity-master</groupId>
             <artifactId>activity-master</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.activity-master</groupId>
-            <artifactId>profile-master</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.guicedee.modules.services</groupId>
-            <artifactId>uadetector-core</artifactId>
-        </dependency>
-<!--
-
-        <dependency>
-            <groupId>com.guicedee.servlets</groupId>
-            <artifactId>guiced-servlets</artifactId>
-        </dependency>
--->
-
-        <dependency>
-            <groupId>com.guicedee.modules.services</groupId>
-            <artifactId>uadetector-resources</artifactId>
-            <type>jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.activity-master</groupId>
-            <artifactId>session-master</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                    <annotationProcessors>
+                        <annotationProcessor>lombok.launch.AnnotationProcessorHider$AnnotationProcessor</annotationProcessor>
+                    </annotationProcessors>
+                    <compilerArgs>
+                        <arg>--add-reads</arg>
+                        <arg>org.jboss.logging=org.hibernate.reactive</arg>
+                        <arg>--add-reads</arg>
+                        <arg>org.hibernate.orm.core=com.guicedee.activitymaster.fsdm</arg>
+                    </compilerArgs>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok</artifactId>
+                        <version>${lombok.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>
+                        --add-reads org.jboss.logging=org.hibernate.reactive
+                        --add-reads org.hibernate.orm.core=com.guicedee.activitymaster.fsdm
+                    </argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

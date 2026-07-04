@@ -1,49 +1,56 @@
 import com.guicedee.activitymaster.fsdm.client.services.systems.IMasterSystem;
+import com.guicedee.activitymaster.mail.MailSystem;
+import com.guicedee.activitymaster.mail.implementations.MailMasterBinder;
+import com.guicedee.activitymaster.mail.implementations.MailMasterModuleInclusion;
+import com.guicedee.client.services.config.IGuiceScanModuleInclusions;
+import com.guicedee.client.services.lifecycle.IGuiceModule;
 
 module com.guicedee.activitymaster.mail {
 
+	// Vert.x mail client (SMTP send) — the comprehensive reactive transport.
+	requires com.guicedee.mailclient;
+	requires io.vertx.mail.client;
+	requires io.vertx.core;
+
+	// Jakarta Mail (IMAP/POP3 receive + MIME parsing/building).
 	requires jakarta.mail;
+	requires jakarta.activation;
 
-	requires com.guicedee.activitymaster.profiles;
+	// Reactive + persistence.
+	requires io.smallrye.mutiny;
+	requires org.hibernate.reactive;
+	requires jakarta.persistence;
 
-	requires net.sf.uadetector.core;
-	requires org.json;
-	requires com.guicedee.guicedpersistence;
-	requires com.guicedee.guicedservlets;
-
-	requires cache.annotations.ri.common;
-	requires cache.annotations.ri.guice;
-	requires cache.api;
-
-	requires java.sql;
-
+	// FSDM warehouse model + services.
 	requires com.guicedee.activitymaster.fsdm;
+	requires com.guicedee.activitymaster.fsdm.client;
+
+	// GuicedEE runtime.
+	requires com.guicedee.client;
 	requires com.google.guice;
 
-	requires com.guicedee.guicedinjection;
-	requires com.google.common;
+	requires static lombok;
+	requires org.apache.logging.log4j;
 
-	requires com.fasterxml.jackson.annotation;
-	requires tools.jackson.databind;
-	requires com.guicedee.activitymaster.sessions;
-	requires com.guicedee.activitymaster.fsdm.client;
-	requires com.entityassist;
-	
-	provides IActivityMasterSystem with com.guicedee.activitymaster.mail.MailSystem;
-	provides com.guicedee.client.services.lifecycle.IGuiceModule with com.guicedee.activitymaster.mail.implementations.MailMasterBinder;
+	// SPI registrations.
+	provides IMasterSystem with MailSystem;
+	provides IGuiceModule with MailMasterBinder;
+	provides IGuiceScanModuleInclusions with MailMasterModuleInclusion;
 
-	opens com.guicedee.activitymaster.mail;
+	// Public API.
+	exports com.guicedee.activitymaster.mail;
+	exports com.guicedee.activitymaster.mail.engine;
 	exports com.guicedee.activitymaster.mail.servers;
 	exports com.guicedee.activitymaster.mail.services;
-	exports com.guicedee.activitymaster.mail.services.enumerations;
-	exports com.guicedee.activitymaster.mail;
-	exports com.guicedee.activitymaster.mail.services.classifications;
 	exports com.guicedee.activitymaster.mail.services.dto;
+	exports com.guicedee.activitymaster.mail.services.classifications;
+	exports com.guicedee.activitymaster.mail.services.enumerations;
 
-	opens com.guicedee.activitymaster.mail.services.dto to tools.jackson.databind;
-	opens com.guicedee.activitymaster.mail.implementations to tools.jackson.databind, com.google.guice;
-	exports com.guicedee.activitymaster.mail.importer;
-	exports com.guicedee.activitymaster.mail.threads;
-	exports com.guicedee.activitymaster.mail.roles;
-
+	// Reflection for Guice / scanning.
+	opens com.guicedee.activitymaster.mail to com.google.guice;
+	opens com.guicedee.activitymaster.mail.implementations to com.google.guice;
+	opens com.guicedee.activitymaster.mail.implementations.updates to com.google.guice;
 }
+
+
+

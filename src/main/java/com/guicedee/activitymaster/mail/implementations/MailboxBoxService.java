@@ -1,470 +1,230 @@
 package com.guicedee.activitymaster.mail.implementations;
 
-import com.guicedee.activitymaster.fsdm.client.services.IArrangementsService;
-import com.guicedee.activitymaster.fsdm.client.services.IInvolvedPartyService;
-import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.arrangements.IArrangement;
-import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.enterprise.IEnterprise;
-import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.party.IInvolvedParty;
-import com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.systems.ISystems;
-import com.guicedee.activitymaster.fsdm.client.services.classifications.types.IdentificationTypes;
-import com.guicedee.activitymaster.mail.MailSystem;
+import com.guicedee.activitymaster.mail.engine.MailMessageParser;
+import com.guicedee.activitymaster.mail.servers.MailProtocol;
 import com.guicedee.activitymaster.mail.servers.MailServer;
 import com.guicedee.activitymaster.mail.services.IMailBoxService;
-import com.guicedee.activitymaster.mail.services.classifications.MailSystemClassifications;
-import com.guicedee.guicedinjection.GuiceContext;
-import com.sun.mail.imap.IMAPFolder;
-import jakarta.mail.*;
+import com.guicedee.activitymaster.mail.services.dto.MailMessage;
+import jakarta.mail.Folder;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Session;
+import jakarta.mail.Store;
 
-import java.io.Closeable;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.guicedee.activitymaster.mail.services.classifications.MailSystemClassifications.*;
-import static com.guicedee.activitymaster.mail.services.enumerations.MailImportArrangementTypes.MailImport;
-
-public class MailboxBoxService
-		implements IMailBoxService<MailboxBoxService>, Closeable
+/**
+ * Default {@link IMailBoxService} implementation. Opens a Jakarta Mail {@link Store} for the
+ * configured {@link MailServer}'s store protocol and reads / parses messages into {@link MailMessage}s.
+ */
+public class MailboxBoxService implements IMailBoxService<MailboxBoxService>
 {
 	private static final Logger log = Logger.getLogger(MailboxBoxService.class.getName());
-	boolean gotMyQuota = false;
-	boolean isGmail = false;
-	private MailServer server;
+
+	private final MailServer<?> server;
 	private Session session;
-	private Properties properties;
 	private Store store;
-	private Map<String, Integer> folderMessages = new LinkedHashMap<>();
-	private boolean loggedIn;
-	private long totalMails;
-	private long totalFolders;
-	private long totalSize;
 
-	public MailboxBoxService()
-	{
-	}
-
-	public MailboxBoxService(MailServer server)
+	public MailboxBoxService(MailServer<?> server)
 	{
 		this.server = server;
-		properties = new Properties();
 	}
 
-	public MailServer getServer()
+	/**
+	 * Factory for ad-hoc, non-DI usage.
+	 *
+	 * @param server the server to connect to
+	 * @return a new mailbox service
+	 */
+	public static MailboxBoxService get(MailServer<?> server)
+	{
+		return new MailboxBoxService(server);
+	}
+
+	@Override
+	public MailboxBoxService connect() throws MessagingException
+	{
+		this.session = server.toStoreSession();
+		MailProtocol protocol = server.getStoreProtocol();
+		this.store = session.getStore(protocol.providerName());
+		int port = portFor(protocol);
+		if (server.isAuth())
+		{
+			store.connect(server.getHostname(), port, server.getUsername(), server.getPassword());
+		}
+		else
+		{
+			store.connect(server.getHostname(), port, null, null);
+		}
+		return this;
+	}
+
+	@Override
+	public boolean isConnected()
+	{
+		return store != null && store.isConnected();
+	}
+
+	@Override
+	public List<String> listFolders() throws MessagingException
+	{
+		ensureConnected();
+		List<String> names = new ArrayList<>();
+		collectFolders(store.getDefaultFolder(), names);
+		return names;
+	}
+
+	private void collectFolders(Folder folder, List<String> names) throws MessagingException
+	{
+		for (Folder child : folder.list("*"))
+		{
+			names.add(child.getFullName());
+			if ((child.getType() & Folder.HOLDS_FOLDERS) != 0)
+			{
+				try
+				{
+					collectFolders(child, names);
+				}
+				catch (MessagingException e)
+				{
+					log.log(Level.FINE, "Cannot recurse folder " + child.getFullName(), e);
+				}
+			}
+		}
+	}
+
+	@Override
+	public int messageCount(String folderName) throws MessagingException
+	{
+		ensureConnected();
+		Folder folder = store.getFolder(folderName);
+		if (!folder.exists())
+		{
+			return 0;
+		}
+		folder.open(Folder.READ_ONLY);
+		try
+		{
+			return folder.getMessageCount();
+		}
+		finally
+		{
+			folder.close(false);
+		}
+	}
+
+	@Override
+	public List<MailMessage> fetch(String folderName, int max) throws MessagingException
+	{
+		ensureConnected();
+		Folder folder = store.getFolder(folderName);
+		if (!folder.exists())
+		{
+			return List.of();
+		}
+		folder.open(Folder.READ_ONLY);
+		try
+		{
+			int count = folder.getMessageCount();
+			if (count == 0)
+			{
+				return List.of();
+			}
+			int start = (max > 0 && count > max) ? count - max + 1 : 1;
+			Message[] messages = folder.getMessages(start, count);
+			List<MailMessage> result = new ArrayList<>(messages.length);
+			for (Message message : messages)
+			{
+				try
+				{
+					result.add(MailMessageParser.parse(message, folderName));
+				}
+				catch (IOException | MessagingException e)
+				{
+					log.log(Level.WARNING, "Failed to parse a message in folder " + folderName, e);
+				}
+			}
+			return result;
+		}
+		finally
+		{
+			folder.close(false);
+		}
+	}
+
+	@Override
+	public Folder openFolder(String folderName, boolean create) throws MessagingException
+	{
+		ensureConnected();
+		Folder folder = store.getFolder(folderName);
+		if (!folder.exists() && create)
+		{
+			folder.create(Folder.HOLDS_MESSAGES);
+		}
+		if (folder.exists() && !folder.isOpen())
+		{
+			folder.open(Folder.READ_WRITE);
+		}
+		return folder;
+	}
+
+	private void ensureConnected() throws MessagingException
+	{
+		if (!isConnected())
+		{
+			connect();
+		}
+	}
+
+	private int portFor(MailProtocol protocol)
+	{
+		Object explicit = server.getExtraProperties().get("mail." + protocol.providerName() + ".port");
+		if (explicit != null)
+		{
+			try
+			{
+				return Integer.parseInt(explicit.toString());
+			}
+			catch (NumberFormatException ignored)
+			{
+				// fall through
+			}
+		}
+		return server.getPort();
+	}
+
+	public MailServer<?> getServer()
 	{
 		return server;
 	}
 
-	public MailboxBoxService setServer(MailServer server)
+	public Store getStore()
 	{
-		this.server = server;
-		return this;
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public IInvolvedParty<?,?> findByEmail(String emailAddress, ISystems<?,?> systems, java.util.UUID... identityToken)
-	{
-		UUID identity = com.guicedee.client.IGuiceContext.get(MailSystem.class)
-		                            .getSystemToken(systems.getEnterprise());
-		IInvolvedPartyService<?> iInvolvedPartyService = com.guicedee.client.IGuiceContext.get(IInvolvedPartyService.class);
-		IInvolvedParty<?, ?> involvedPartyService = iInvolvedPartyService.get()
-		                                                                 .builder()
-		                                                                 .findByIdentificationType(IdentificationTypes.IdentificationTypeEmailAddress.toString(),
-				                                                                 emailAddress
-				                                                                 , systems, identity)
-		                                                                 .get()
-		                                                                 .orElse(null);
-
-		return involvedPartyService;
-	}
-
-	@Override
-	public ISystems<?,?> getMailSystem(IEnterprise<?,?> enterprise)
-	{
-		return com.guicedee.client.IGuiceContext.get(MailSystem.class)
-		                   .getSystem(enterprise);
-	}
-
-	@Override
-	public UUID getMailUUID(IEnterprise<?,?> enterprise)
-	{
-		return com.guicedee.client.IGuiceContext.get(MailSystem.class)
-		                   .getSystemToken(enterprise);
-	}
-
-	@Override
-
-	public MailboxBoxService login()
-	{
-		properties.put("mail.transport.protocol", "imap");
-		properties.put("mail.imap.port", server.getPort());
-		properties.put("mail.imap.host", server.getHostname());
-		properties.put("mail.imap.user", server.getUsername());
-		properties.put("mail.imap.password", server.getPassword());
-		properties.put("mail.imap.timeout", 10);
-		properties.put("mail.imap.starttls.enable", true);
-
-		session = Session.getDefaultInstance(properties, null);
-
-		try
-		{
-			store = session.getStore("imaps");
-			store.connect(server.getHostname(), server.getUsername(), server.getPassword());
-			loggedIn = true;
-		}
-		catch (AuthenticationFailedException afe)
-		{
-			throw new RuntimeException("Can't Connect", afe);
-		}
-		catch (NoSuchProviderException e)
-		{
-			log.log(Level.SEVERE, "IMAPS NOT AVAILABLE", e);
-		}
-		catch (MessagingException e)
-		{
-			log.log(Level.SEVERE, "Could not connect", e);
-		}
-		return this;
-	}
-
-	@Override
-	public IArrangement<?,?> createArrangement(IInvolvedParty<?,?> ip, String value, java.util.UUID... identityToken)
-	{
-		UUID identity = com.guicedee.client.IGuiceContext.get(MailSystem.class)
-		                            .getSystemToken(ip.getEnterprise());
-		ISystems<?,?> mailSystem = com.guicedee.client.IGuiceContext.get(MailSystem.class)
-		                                     .getSystem(ip.getEnterprise());
-
-		IArrangementsService<?> arrangementsService = com.guicedee.client.IGuiceContext.get(IArrangementsService.class);
-		IArrangement<?,?> a = arrangementsService.create(MailImport.toString(),MailImportFor.toString(),value, mailSystem, identityToken);
-		a.addInvolvedParty(ip, MailSystemClassifications.MailImport.toString(), value, mailSystem, identity);
-
-		return a;
-	}
-
-	@Override
-	public MailboxBoxService loadFolders() throws MessagingException
-	{
-		if (!loggedIn)
-		{
-			login();
-		}
-		folderMessages.clear();
-		try
-		{
-			goThroughFolders("", store.getDefaultFolder());
-		}
-		catch (Throwable T)
-		{
-			log.log(Level.SEVERE, "OIOOOOPPS", T);
-		}
-		totalMails = getNumberOfMails();
-		return this;
-	}
-
-	@Override
-	public long getNumberOfMails() throws MessagingException
-	{
-		Integer totalMails = 0;
-		for (Map.Entry<String, Integer> entry : folderMessages.entrySet())
-		{
-			String a = entry.getKey();
-			Integer b = entry.getValue();
-			totalMails += b;
-		}
-		return totalMails;
-	}
-
-	@Override
-	public List<Folder> getFolders(String folderPath) throws MessagingException
-	{
-		List<Folder> fold = new ArrayList<>();
-		String[] list = folderPath.split("/");
-		Folder f = store.getDefaultFolder();
-		for (String s : list)
-		{
-			f = f.getFolder(s);
-			fold.add(f);
-		}
-		return fold;
-	}
-
-	@Override
-	public Folder addFolder(String folder, String folderPath) throws MessagingException
-	{
-		if (!loggedIn)
-		{
-			login();
-		}
-		String[] list = folderPath.split("/");
-		Folder f = store.getDefaultFolder();
-		for (String s : list)
-		{
-			f = f.getFolder(s);
-			if (!f.isOpen())
-			{
-				try
-				{
-					f.open(Folder.READ_ONLY);
-				}
-				catch (MessagingException me)
-				{
-					//cant use folder
-					continue;
-				}
-			}
-			f.close(true);
-		}
-		Folder newFolder = f.getFolder(folder);
-		if (!newFolder.exists())
-		{
-			newFolder.create(Folder.HOLDS_MESSAGES);
-		}
-		try
-		{
-			if (!newFolder.isOpen())
-			{
-				newFolder.open(Folder.READ_WRITE);
-			}
-			if (!f.isOpen())
-			{
-				f.open(Folder.READ_WRITE);
-			}
-			folderMessages.put(newFolder.getFullName(), 0);
-			f.close(true);
-			newFolder.close(true);
-		}
-		catch (FolderNotFoundException nfe)
-		{
-			log.log(Level.WARNING, "Folder not found : " + f.getFullName(), nfe);
-		}
-		return newFolder;
-	}
-
-	@Override
-	public long getTotalFolders()
-	{
-		return this.totalFolders;
-	}
-
-	@Override
-	public long getTotalSize()
-	{
-		return this.totalSize;
-	}
-
-	@Override
-	public long getTotalMails()
-	{
-		return this.totalMails;
-	}
-
-	public MailboxBoxService setTotalMails(long totalMails)
-	{
-		this.totalMails = totalMails;
-		return this;
-	}
-
-	public MailboxBoxService setTotalSize(long totalSize)
-	{
-		this.totalSize = totalSize;
-		return this;
-	}
-
-	public MailboxBoxService setTotalFolders(long totalFolders)
-	{
-		this.totalFolders = totalFolders;
-		return this;
-	}
-
-	private Folder goThroughFolders(String prefix, Folder fd) throws MessagingException
-	{
-		try
-		{
-			if (!fd.isOpen())
-			{
-				fd.open(Folder.READ_WRITE);
-			}
-		}
-		catch (MessagingException me)
-		{
-			for (Folder folder : fd.list("*"))
-			{
-				goThroughFolders(prefix + folder.getName() + "/", folder);
-				try
-				{
-					folder.close();
-				}
-				catch (Exception me2)
-				{
-					//Expected
-				}
-			}
-			return fd;
-		}
-		if (!fd.isOpen())
-		{
-			fd.open(Folder.READ_WRITE);
-		}
-		IMAPFolder imf = (IMAPFolder) fd;
-		int type = fd.getType();
-		String[] attrs = imf.getAttributes();
-		List<String> attrList = Arrays.asList(attrs);
-		if (attrList.contains("\\All") ||
-		    attrList.contains("\\Important") ||
-		    attrList.contains("\\Starred")
-		)
-		{
-			try
-			{
-				fd.close();
-			}
-			catch (Exception e)
-			{
-				//in case
-			}
-			return fd;
-		}
-
-		String fullPathName = prefix + fd.getFullName();
-		if (!isGmail && fullPathName.contains("[Gmail]"))
-		{
-			isGmail = true;
-		}
-
-		String folderName = fd.getFullName();
-		folderMessages.put(folderName, fd.getMessageCount());
-		totalFolders += 1;
-		Quota[] quotas = null;
-		if (!gotMyQuota)
-		{
-			if (quotas == null)
-			{
-				try
-				{
-					quotas = imf.getQuota();
-
-					for (Quota quota : quotas)
-					{
-						System.out.println(String.format("quotaRoot:'%s'", quota.quotaRoot));
-						for (Quota.Resource resource : quota.resources)
-						{
-							System.out.println(String.format("name:'%s', limit:'%s', usage:'%s'",
-							                                 resource.name, resource.limit, resource.usage));
-							totalSize = resource.usage * 1024;
-							gotMyQuota = true;
-						}
-					}
-				}
-				catch (Exception e)
-				{
-					log.log(Level.WARNING, "Cannot Get Quota for " + imf.getFullName());
-				}
-			}
-		}
-		for (Folder folder : fd.list("*"))
-		{
-			goThroughFolders(prefix + folder.getName() + "/", folder);
-			folder.close();
-		}
-
-		return fd;
-	}
-
-	public Folder getFolder(String folderPath) throws MessagingException
-	{
-		Folder f = store.getDefaultFolder();
-		return f.getFolder(folderPath);
+		return store;
 	}
 
 	@Override
 	public void close() throws IOException
 	{
-		loggedIn = false;
-		try
+		if (store != null)
 		{
-			store.close();
-		}
-		catch (MessagingException e)
-		{
-			log.log(Level.SEVERE, "Couldn't close store", e);
-		}
-	}
-
-	public Map<String, Integer> getFolderMessages()
-	{
-		return folderMessages;
-	}
-
-	public MailboxBoxService setFolderMessages(Map<String, Integer> folderMessages)
-	{
-		this.folderMessages = folderMessages;
-		return this;
-	}
-
-	public Session getSession()
-	{
-		return this.session;
-	}
-
-	public MailboxBoxService setSession(Session session)
-	{
-		this.session = session;
-		return this;
-	}
-
-	public Properties getProperties()
-	{
-		return this.properties;
-	}
-
-	public MailboxBoxService setProperties(Properties properties)
-	{
-		this.properties = properties;
-		return this;
-	}
-
-	public Store getStore()
-	{
-		return this.store;
-	}
-
-	public MailboxBoxService setStore(Store store)
-	{
-		this.store = store;
-		return this;
-	}
-
-	public boolean isLoggedIn()
-	{
-		return this.loggedIn;
-	}
-
-	public MailboxBoxService setLoggedIn(boolean loggedIn)
-	{
-		this.loggedIn = loggedIn;
-		return this;
-	}
-
-	public boolean isGotMyQuota()
-	{
-		return this.gotMyQuota;
-	}
-
-	public MailboxBoxService setGotMyQuota(boolean gotMyQuota)
-	{
-		this.gotMyQuota = gotMyQuota;
-		return this;
-	}
-
-	private class PasswordAuthenticator
-			extends jakarta.mail.Authenticator
-	{
-		@Override
-		public jakarta.mail.PasswordAuthentication getPasswordAuthentication()
-		{
-			return new PasswordAuthentication(server.getUsername(), server.getPassword());
+			try
+			{
+				store.close();
+			}
+			catch (MessagingException e)
+			{
+				throw new IOException("Failed to close the mail store", e);
+			}
+			finally
+			{
+				store = null;
+			}
 		}
 	}
 }
+
