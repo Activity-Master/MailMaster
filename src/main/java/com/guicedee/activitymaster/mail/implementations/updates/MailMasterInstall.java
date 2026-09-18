@@ -35,52 +35,7 @@ import static com.guicedee.client.IGuiceContext.get;
 @Log4j2
 public class MailMasterInstall implements ISystemUpdate
 {
-	@Override
-	public Uni<Boolean> update(Mutiny.Session session, IEnterprise<?, ?> enterprise)
-	{
-		log.info("Installing Mail Master taxonomy for enterprise {}", enterprise.getName());
-		return IActivityMasterService.getISystem(session, MailSystemName, enterprise)
-				.chain(system -> IActivityMasterService.getISystemToken(session, MailSystemName, enterprise)
-						.chain(token -> createTaxonomy(session, system, token)))
-				.onFailure().invoke(error -> log.error("Mail Master installation failed: {}", error.getMessage(), error))
-				.replaceWith(Boolean.TRUE);
-	}
-
-	private Uni<Void> createTaxonomy(Mutiny.Session session, ISystems<?, ?> system, UUID token)
-	{
-		IClassificationService<?> classificationService = get(IClassificationService.class);
-		IEventService<?> eventService = get(IEventService.class);
-		IArrangementsService<?> arrangementsService = get(IArrangementsService.class);
-		IResourceItemService<?> resourceItemService = get(IResourceItemService.class);
-
-		Uni<Void> chain = Uni.createFrom().voidItem();
-
-		logProgress("Mail Master", "Creating mail classifications");
-		for (MailClassifications classification : MailClassifications.values())
-		{
-			chain = chain.chain(() -> classificationService.create(session, classification, system, token).replaceWithVoid());
-		}
-
-		chain = chain
-				.chain(() -> {
-					logProgress("Mail Master", "Creating mail event types", 1);
-					return eventService.createEventType(session, MailEventTypes.MailReceived, system, token).replaceWithVoid();
-				})
-				.chain(() -> eventService.createEventType(session, MailEventTypes.MailSent, system, token).replaceWithVoid())
-				.chain(() -> {
-					logProgress("Mail Master", "Creating mailbox arrangement type", 1);
-					return arrangementsService.createArrangementType(session, MailArrangementTypes.Mailbox, system, token).replaceWithVoid();
-				})
-				.chain(() -> {
-					logProgress("Mail Master", "Creating mail resource item types", 1);
-					return resourceItemService.createType(session, MailResourceItemTypes.MailMessage, system, token).replaceWithVoid();
-				})
-				.chain(() -> resourceItemService.createType(session, MailResourceItemTypes.MailAttachment, system, token).replaceWithVoid());
-
-		return chain;
-	}
-
-	/** Stateless twin of {@link #update(Mutiny.Session, IEnterprise)}. */
+	/** Stateless twin of {@link #update(Mutiny.StatelessSession, IEnterprise)}. */
 	@Override
 	public Uni<Boolean> update(Mutiny.StatelessSession session, IEnterprise<?, ?> enterprise)
 	{

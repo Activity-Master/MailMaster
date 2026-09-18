@@ -27,19 +27,13 @@ public class MailSystem
 	private Provider<ISystemsService<?>> systemsService;
 
 	@Override
-	public Uni<ISystems<?, ?>> registerSystem(Mutiny.Session session, IEnterprise<?, ?> enterprise)
+	public Uni<ISystems<?, ?>> registerSystem(Mutiny.StatelessSession session, IEnterprise<?, ?> enterprise)
 	{
 		return systemsService.get()
 				.create(session, enterprise, getSystemName(), getSystemDescription())
 				.chain(system -> getSystem(session, enterprise)
 						.chain(sys -> systemsService.get().registerNewSystem(session, enterprise, sys))
 						.chain(() -> Uni.createFrom().item(system)));
-	}
-
-	@Override
-	public Uni<Void> createDefaults(Mutiny.Session session, IEnterprise<?, ?> enterprise)
-	{
-		return Uni.createFrom().voidItem();
 	}
 
 	@Override
