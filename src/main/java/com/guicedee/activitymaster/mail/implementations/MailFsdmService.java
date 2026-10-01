@@ -30,7 +30,6 @@ import jakarta.persistence.NoResultException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -39,9 +38,8 @@ import static com.guicedee.client.IGuiceContext.get;
 
 /**
  * Default {@link IMailFsdmService} implementation. All FSDM writes use a {@link Mutiny.StatelessSession};
- * the {@link #ingest} pipeline parallelises independent work across separate sessions. The two core
- * operations without a stateless variant — event creation and mailbox-arrangement creation — run on a
- * short dedicated stateful transaction.
+ * {@link #ingest} checks the verified user's installation and consent before creating private
+ * events, resources and mailbox links together in one stateless transaction.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class MailFsdmService implements IMailFsdmService<MailFsdmService>
@@ -117,185 +115,134 @@ public class MailFsdmService implements IMailFsdmService<MailFsdmService>
 						.replaceWith((IResourceItem<?, ?>) resourceItem));
 	}
 
-	// ---- High-level parallel ingest ---------------------------------------------------------
+    @Override
+    public Uni<UUID> ingest(MailMessage message, String mailboxOwnerEmail, MailDirection direction, String enterpriseName) {
+        return Uni.createFrom().deferred(() -> get(com.guicedee.activitymaster.mail.MailIdentityProvider.class).current())
+                .onItem().ifNull().failWith(() -> new SecurityException("Authenticated mail identity required"))
+                .chain(identity -> ingest(message, mailboxOwnerEmail, direction, enterpriseName, identity));
+    }
 
-	@Override
-	public Uni<UUID> ingest(MailMessage message, String mailboxOwnerEmail, MailDirection direction, String enterpriseName)
-	{
-		MailAddress sender = message.getFrom();
-		List<MailAddress> recipients = new ArrayList<>(message.getAllRecipients());
-		List<MailAttachment> attachments = new ArrayList<>();
-		for (MailAttachment attachment : message.getAttachments())
-		{
-			if (!attachment.isInline())
-			{
-				attachments.add(attachment);
-			}
-		}
-		MailAddress ownerAddress = (mailboxOwnerEmail == null || mailboxOwnerEmail.isBlank()) ? null : new MailAddress(mailboxOwnerEmail);
+    @Override
+    public Uni<UUID> ingest(MailMessage message, String mailboxOwnerEmail, MailDirection direction, String enterpriseName,
+                             com.guicedee.activitymaster.mail.MailIdentity identity) {
+        java.util.Objects.requireNonNull(message); java.util.Objects.requireNonNull(direction);
+        java.util.Objects.requireNonNull(identity);
+        // Identity is captured before entering the transaction. Headers and ownerEmail are labels, never actors.
+        return SessionUtils.withActivityMaster(enterpriseName, MailSystemName, t -> {
+            if (!identity.enterpriseId().equals(t.getItem2().getId()))
+                return Uni.createFrom().failure(new SecurityException("Mail enterprise scope mismatch"));
+            Mutiny.StatelessSession session = t.getItem1();
+            ISystems<?, ?> system = t.getItem3();
+            UUID[] tokens = identity.tokens();
+            var plugins = get(com.guicedee.activitymaster.fsdm.plugins.PluginService.class);
+            IEventService<?> events = get(IEventService.class);
+            IInvolvedPartyService<?> parties = get(IInvolvedPartyService.class);
+            com.guicedee.activitymaster.fsdm.client.services.ISystemsService<?> systems =
+                    get(com.guicedee.activitymaster.fsdm.client.services.ISystemsService.class);
+            String type = (direction == MailDirection.Inbound ? MailEventTypes.MailReceived : MailEventTypes.MailSent).name();
+            return plugins.checkBuiltIn(session, system, identity.user(), identity.installationPartyId())
+                    .chain(() -> parties.find(session, identity.partyId()))
+                    .chain(owner -> events.createEvent(session, type, system, tokens)
+                            .chain(event -> restrictNewRow(session, system, identity,
+                                            (com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.base.IWarehouseCoreTable) event,
+                                            "event.eventsecuritytoken", "eventsid")
+                                    .chain(() -> storeMessageResource(session, message, system, tokens))
+                                    .chain(resource -> restrictNewRow(session, system, identity,
+                                                    (com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.base.IWarehouseCoreTable) resource,
+                                                    "resource.resourceitemsecuritytoken", "resourceitemid")
+                                            .chain(() -> ((IEvent) event).addOrReuseResourceItem(session, MailClassifications.MailMessageLink.name(),
+                                                    resource, nz(message.getSubject()), system, tokens))
+                                            .chain(() -> writeIngestLinks(session, system, identity, event, message, direction))
+                                            .chain(() -> mailbox(session, system, identity, owner, resource, mailboxOwnerEmail)))
+                                    .chain(() -> systems.getActivityMaster(session, system.getEnterprise())
+                                            .chain(core -> plugins.audit(session, core, identity.user(),
+                                                    new com.guicedee.activitymaster.fsdm.plugins.PluginModels.Invocation(system.getId(), identity.installationPartyId()),
+                                                    "mail.ingest")))
+                                    .replaceWith(event.getId())));
+        });
+    }
 
-		// Phase A — create the independent records in parallel, each on its own session.
-		Uni<IEvent<?, ?>> eventUni = createEvent(enterpriseName, direction);
-		Uni<IInvolvedParty<?, ?>> senderUni = sender == null ? Uni.createFrom().<IInvolvedParty<?, ?>>nullItem() : resolveParty(enterpriseName, sender);
-		Uni<List<IInvolvedParty<?, ?>>> recipientsUni = resolveParties(enterpriseName, recipients);
-		Uni<IResourceItem<?, ?>> messageResourceUni = SessionUtils.withSystemAndTokenStateless(enterpriseName, MailSystemName,
-				t -> storeMessageResource(t.getItem1(), message, t.getItem3(), t.getItem4()));
-		Uni<List<IResourceItem<?, ?>>> attachmentResourcesUni = storeAttachments(enterpriseName, attachments);
-		Uni<IInvolvedParty<?, ?>> ownerUni = ownerAddress == null ? Uni.createFrom().<IInvolvedParty<?, ?>>nullItem() : resolveParty(enterpriseName, ownerAddress);
+    private Uni<Void> writeIngestLinks(Mutiny.StatelessSession session, ISystems<?, ?> system,
+                                       com.guicedee.activitymaster.mail.MailIdentity identity, IEvent<?, ?> event,
+                                       MailMessage message, MailDirection direction) {
+        UUID[] tokens = identity.tokens();
+        Uni<Void> chain = reuse(session, event, MailClassifications.MailDirection, direction.name(), system, tokens)
+                .chain(() -> reuse(session, event, MailClassifications.MailMessageId, nz(message.getMessageId()), system, tokens))
+                .chain(() -> reuse(session, event, MailClassifications.MailSubject, nz(message.getSubject()), system, tokens))
+                .chain(() -> reuse(session, event, MailClassifications.MailFolder, nz(message.getFolder()), system, tokens))
+                .chain(() -> reuse(session, event, MailClassifications.MailHasAttachments,
+                        Boolean.toString(message.getAttachments().stream().anyMatch(attachment -> !attachment.isInline())), system, tokens));
+        List<MailAddress> addresses = new ArrayList<>();
+        if (message.getFrom() != null) addresses.add(message.getFrom());
+        addresses.addAll(message.getAllRecipients());
+        for (int index = 0; index < addresses.size(); index++) {
+            MailAddress address = addresses.get(index);
+            String role = message.getFrom() != null && index == 0 ? MailClassifications.MailSender.name() : MailClassifications.MailRecipient.name();
+            chain = chain.chain(() -> findOrCreateParty(session, address, system, tokens)
+                    .chain(party -> ((IEvent) event).addInvolvedParty(session, party, role, address.getAddress(), system, tokens)).replaceWithVoid());
+        }
+        for (MailAttachment attachment : message.getAttachments()) {
+            if (attachment.isInline()) continue;
+            chain = chain.chain(() -> storeAttachmentResource(session, attachment, system, tokens)
+                    .chain(resource -> restrictNewRow(session, system, identity,
+                                    (com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.base.IWarehouseCoreTable) resource,
+                                    "resource.resourceitemsecuritytoken", "resourceitemid")
+                            .chain(() -> ((IEvent) event).addOrReuseResourceItem(session, MailClassifications.MailAttachmentLink.name(),
+                                    resource, nz(attachment.getFileName()), system, tokens))).replaceWithVoid());
+        }
+        return chain;
+    }
 
-		return Uni.combine().all().unis(eventUni, senderUni, recipientsUni, messageResourceUni, attachmentResourcesUni, ownerUni)
-				.asTuple()
-				.chain(tuple -> {
-					IEvent<?, ?> event = tuple.getItem1();
-					IInvolvedParty<?, ?> senderParty = tuple.getItem2();
-					List<IInvolvedParty<?, ?>> recipientParties = tuple.getItem3();
-					IResourceItem<?, ?> messageResource = tuple.getItem4();
-					List<IResourceItem<?, ?>> attachmentResources = tuple.getItem5();
-					IInvolvedParty<?, ?> ownerParty = tuple.getItem6();
+    private Uni<Void> mailbox(Mutiny.StatelessSession session, ISystems<?, ?> system,
+                              com.guicedee.activitymaster.mail.MailIdentity identity, IInvolvedParty<?, ?> owner,
+                              IResourceItem<?, ?> resource, String label) {
+        // The actor determines the mailbox, never an address taken from the message.
+        String key = identity.partyId().toString();
+        return ((Uni<List<IArrangement<?, ?>>>) (Uni) get(IArrangementsService.class).findArrangementsByClassification(session,
+                MailClassifications.MailboxOwner.name(), key, system, identity.tokens()))
+                .chain(rows -> {
+                    Uni<IArrangement<?, ?>> box;
+                    if (rows.size() > 1) return Uni.createFrom().failure(new SecurityException("Ambiguous mailbox"));
+                    if (!rows.isEmpty()) {
+                        IArrangement<?, ?> existing = rows.getFirst();
+                        box = ((com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.base.IWarehouseCoreTable) existing)
+                                .canWrite(session, system, identity.tokens()).chain(allowed -> Boolean.TRUE.equals(allowed)
+                                        ? Uni.createFrom().item(existing) : Uni.createFrom().failure(new SecurityException("Mailbox unavailable")));
+                    } else {
+                        box = ((Uni<IArrangement<?, ?>>) (Uni) get(IArrangementsService.class).create(session, (UUID) null,
+                                MailArrangementTypes.Mailbox.name(), MailClassifications.MailboxOwner.name(), key, system, identity.tokens()))
+                                .chain(created -> restrictNewRow(session, system, identity,
+                                                (com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.base.IWarehouseCoreTable) created,
+                                                "arrangement.arrangementsecuritytoken", "arrangementid")
+                                        .chain(() -> ((IArrangement) created).addInvolvedParty(session, owner,
+                                                MailClassifications.MailboxOwner.name(), key, system, identity.tokens())).replaceWith(created));
+                    }
+                    return box.chain(arrangement -> ((IArrangement) arrangement).addOrReuseResourceItem(session,
+                            MailClassifications.MailMessageLink.name(), resource, "mailbox", system, identity.tokens())).replaceWithVoid();
+                });
+    }
 
-					// Phase B — links + classifications referencing the now-committed records, in parallel.
-					List<Uni<Void>> ops = new ArrayList<>();
-					ops.add(writeEventMetadata(enterpriseName, event, message, direction));
-					if (senderParty != null)
-					{
-						ops.add(linkEventParty(enterpriseName, event, senderParty, MailClassifications.MailSender, sender.getAddress()));
-					}
-					for (int i = 0; i < recipientParties.size(); i++)
-					{
-						IInvolvedParty<?, ?> party = recipientParties.get(i);
-						String address = recipients.get(i).getAddress();
-						ops.add(linkEventParty(enterpriseName, event, party, MailClassifications.MailRecipient, address));
-					}
-					ops.add(linkEventResource(enterpriseName, event, messageResource, MailClassifications.MailMessageLink, nz(message.getSubject())));
-					for (int i = 0; i < attachmentResources.size(); i++)
-					{
-						IResourceItem<?, ?> resource = attachmentResources.get(i);
-						String fileName = nz(attachments.get(i).getFileName());
-						ops.add(linkEventResource(enterpriseName, event, resource, MailClassifications.MailAttachmentLink, fileName));
-					}
-					if (ownerParty != null)
-					{
-						ops.add(linkMailbox(enterpriseName, ownerParty, messageResource, mailboxOwnerEmail));
-					}
-
-					return Uni.combine().all().unis(ops).discardItems().replaceWith(event.getId());
-				});
-	}
-
-	// ---- Per-task session helpers (parallelised across sessions) ----------------------------
-
-	private Uni<IEvent<?, ?>> createEvent(String enterpriseName, MailDirection direction)
-	{
-		String type = (direction == MailDirection.Inbound ? MailEventTypes.MailReceived : MailEventTypes.MailSent).name();
-		return SessionUtils.withSystemAndTokenStateless(enterpriseName, MailSystemName, t -> {
-			return get(IEventService.class).createEvent(t.getItem1(), type, t.getItem3(), t.getItem4())
-					.map(event -> (IEvent<?, ?>) event);
-		});
-	}
-
-	private Uni<IInvolvedParty<?, ?>> resolveParty(String enterpriseName, MailAddress address)
-	{
-		return SessionUtils.withSystemAndTokenStateless(enterpriseName, MailSystemName,
-				t -> findOrCreateParty(t.getItem1(), address, t.getItem3(), t.getItem4()));
-	}
-
-	private Uni<List<IInvolvedParty<?, ?>>> resolveParties(String enterpriseName, List<MailAddress> addresses)
-	{
-		if (addresses.isEmpty())
-		{
-			return Uni.createFrom().item(List.of());
-		}
-		List<Uni<IInvolvedParty<?, ?>>> unis = new ArrayList<>();
-		for (MailAddress address : addresses)
-		{
-			unis.add(resolveParty(enterpriseName, address));
-		}
-		return Uni.combine().all().unis(unis).combinedWith(items -> {
-			List<IInvolvedParty<?, ?>> out = new ArrayList<>();
-			for (Object item : items)
-			{
-				out.add((IInvolvedParty<?, ?>) item);
-			}
-			return out;
-		});
-	}
-
-	private Uni<List<IResourceItem<?, ?>>> storeAttachments(String enterpriseName, List<MailAttachment> attachments)
-	{
-		if (attachments.isEmpty())
-		{
-			return Uni.createFrom().item(List.of());
-		}
-		List<Uni<IResourceItem<?, ?>>> unis = new ArrayList<>();
-		for (MailAttachment attachment : attachments)
-		{
-			unis.add(SessionUtils.withSystemAndTokenStateless(enterpriseName, MailSystemName,
-					t -> storeAttachmentResource(t.getItem1(), attachment, t.getItem3(), t.getItem4())));
-		}
-		return Uni.combine().all().unis(unis).combinedWith(items -> {
-			List<IResourceItem<?, ?>> out = new ArrayList<>();
-			for (Object item : items)
-			{
-				out.add((IResourceItem<?, ?>) item);
-			}
-			return out;
-		});
-	}
-
-	private Uni<Void> writeEventMetadata(String enterpriseName, IEvent<?, ?> event, MailMessage message, MailDirection direction)
-	{
-		return SessionUtils.withSystemAndTokenStateless(enterpriseName, MailSystemName, t -> {
-			Mutiny.StatelessSession session = t.getItem1();
-			ISystems<?, ?> system = t.getItem3();
-			UUID[] token = t.getItem4();
-			return reuse(session, event, MailClassifications.MailDirection, direction.name(), system, token)
-					.chain(() -> reuse(session, event, MailClassifications.MailMessageId, nz(message.getMessageId()), system, token))
-					.chain(() -> reuse(session, event, MailClassifications.MailSubject, nz(message.getSubject()), system, token))
-					.chain(() -> reuse(session, event, MailClassifications.MailFolder, nz(message.getFolder()), system, token))
-					.chain(() -> reuse(session, event, MailClassifications.MailHasAttachments, String.valueOf(message.hasAttachments()), system, token));
-		});
-	}
-
-	private Uni<Void> linkEventParty(String enterpriseName, IEvent<?, ?> event, IInvolvedParty<?, ?> party, MailClassifications role, String value)
-	{
-		return SessionUtils.withSystemAndTokenStateless(enterpriseName, MailSystemName,
-				t -> ((IEvent) event).addInvolvedParty(t.getItem1(), party, role.name(), nz(value), t.getItem3(), t.getItem4()).replaceWithVoid());
-	}
-
-	private Uni<Void> linkEventResource(String enterpriseName, IEvent<?, ?> event, IResourceItem<?, ?> resource, MailClassifications role, String value)
-	{
-		return SessionUtils.withSystemAndTokenStateless(enterpriseName, MailSystemName,
-				t -> ((IEvent) event).addOrReuseResourceItem(t.getItem1(), role.name(), resource, nz(value), t.getItem3(), t.getItem4()).replaceWithVoid());
-	}
-
-	private Uni<Void> linkMailbox(String enterpriseName, IInvolvedParty<?, ?> ownerParty, IResourceItem<?, ?> messageResource, String ownerEmail)
-	{
-		return SessionUtils.withSystemAndTokenStateless(enterpriseName, MailSystemName, t -> {
-			Mutiny.StatelessSession session = t.getItem1();
-			ISystems<?, ?> system = t.getItem3();
-			UUID[] token = t.getItem4();
-			Uni<List<IArrangement<?, ?>>> finder = (Uni<List<IArrangement<?, ?>>>) (Uni)
-					get(IArrangementsService.class).findArrangementsByClassification(session,
-							MailClassifications.MailboxOwner.name(), ownerEmail, system, token);
-			return finder
-					.onFailure().recoverWithItem(Collections.<IArrangement<?, ?>>emptyList())
-					.chain(list -> {
-						if (list != null && !list.isEmpty())
-						{
-							return ((IArrangement) list.get(0)).addOrReuseResourceItem(session,
-									MailClassifications.MailMessageLink.name(), messageResource, "mailbox", system, token).replaceWithVoid();
-						}
-						return ((Uni<IArrangement<?, ?>>) (Uni) get(IArrangementsService.class)
-								.create(session, (UUID) null, MailArrangementTypes.Mailbox.name(),
-										MailClassifications.MailboxOwner.name(), ownerEmail, system, token))
-								.chain(arrangement -> ((IArrangement) arrangement).addInvolvedParty(session, ownerParty,
-												MailClassifications.MailboxOwner.name(), ownerEmail, system, token)
-										.replaceWith((IArrangement<?, ?>) arrangement))
-								.chain(arrangement -> ((IArrangement) arrangement).addOrReuseResourceItem(session,
-										MailClassifications.MailMessageLink.name(), messageResource, "mailbox", system, token).replaceWithVoid());
-					});
-		});
-	}
+    private Uni<Void> restrictNewRow(Mutiny.StatelessSession session, ISystems<?, ?> system,
+                                     com.guicedee.activitymaster.mail.MailIdentity identity,
+                                     com.guicedee.activitymaster.fsdm.client.services.builders.warehouse.base.IWarehouseCoreTable<?, ?, ?, ?> row,
+                                     String table, String column) {
+        com.guicedee.activitymaster.fsdm.client.services.ISecurityTokenService<?> security =
+                get(com.guicedee.activitymaster.fsdm.client.services.ISecurityTokenService.class);
+        com.guicedee.activitymaster.fsdm.client.services.IActiveFlagService<?> flags =
+                get(com.guicedee.activitymaster.fsdm.client.services.IActiveFlagService.class);
+        return flags.getArchivedFlag(session, system.getEnterprise(), identity.tokens())
+                .chain(archived -> session.createNativeQuery("update " + table + " set activeflagid=:flag,effectivetodate=statement_timestamp() "
+                                + "where " + column + "=:id and enterpriseid=:enterprise and effectivetodate>statement_timestamp()")
+                        .setParameter("flag", archived.getId()).setParameter("id", row.getId())
+                        .setParameter("enterprise", identity.enterpriseId()).executeUpdate())
+                .chain(() -> flags.getActiveFlag(session, system.getEnterprise(), identity.tokens()))
+                .chain(active -> security.getAdministratorsFolder(session, system, identity.tokens())
+                        .chain(admin -> row.createSecurityGrant(session, system, system.getEnterprise(), active, admin,
+                                true, true, true, true, identity.tokens()))
+                        .chain(() -> security.getSecurityToken(session, identity.identityToken(), system, identity.tokens()))
+                        .chain(user -> row.createSecurityGrant(session, system, system.getEnterprise(), active, user,
+                                true, true, true, true, identity.tokens()))).replaceWithVoid();
+    }
 
 	// ---- Helpers ----------------------------------------------------------------------------
 
@@ -310,7 +257,4 @@ public class MailFsdmService implements IMailFsdmService<MailFsdmService>
 		return value == null ? "" : value;
 	}
 }
-
-
-
 

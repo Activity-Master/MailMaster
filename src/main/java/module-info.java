@@ -1,4 +1,4 @@
-import com.guicedee.activitymaster.fsdm.client.services.systems.IMasterSystem;
+import com.guicedee.activitymaster.fsdm.client.services.systems.IMasterPlugin;
 import com.guicedee.activitymaster.mail.MailSystem;
 import com.guicedee.activitymaster.mail.implementations.MailMasterBinder;
 import com.guicedee.activitymaster.mail.implementations.MailMasterModuleInclusion;
@@ -33,7 +33,7 @@ module com.guicedee.activitymaster.mail {
 	requires org.apache.logging.log4j;
 
 	// SPI registrations.
-	provides IMasterSystem with MailSystem;
+	provides IMasterPlugin with MailSystem;
 	provides IGuiceModule with MailMasterBinder;
 	provides IGuiceScanModuleInclusions with MailMasterModuleInclusion;
 

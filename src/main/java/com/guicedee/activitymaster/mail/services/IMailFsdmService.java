@@ -19,9 +19,8 @@ import java.util.UUID;
  * <p>
  * The granular operations run on a caller-supplied {@link Mutiny.StatelessSession} — the leanest
  * session for these transport-shaped writes (no first-level cache, no dirty-checking, no auto-flush).
- * The high-level {@link #ingest} pipeline parallelises the independent work, running each branch on
- * its <strong>own</strong> stateless session (Hibernate Reactive forbids concurrent operations on a
- * single session, so parallelism is achieved across sessions, not within one).
+ * The high-level {@link #ingest} pipeline checks the verified user's plugin access and creates
+ * private mail records together in one stateless transaction.
  *
  * @param <J> the concrete service type
  */
@@ -81,17 +80,21 @@ public interface IMailFsdmService<J extends IMailFsdmService<J>>
 	 * attachments as resource items linked to the event, and wires the message into the owning
 	 * mailbox arrangement.
 	 * <p>
-	 * Independent steps run in parallel, each on its own session: the event is created (stateful), the
-	 * parties are resolved and the resource items are stored (stateless). Once those are committed, the
-	 * links and classifications are written in parallel too. The method opens and manages its own
-	 * sessions, so it is the canonical top-level entry point (REST / event-bus).
+	 * Resolves the current verified identity from MailIdentityProvider. The identity determines
+	 * mailbox ownership; installation, consent, policy and private FSDM writes share one transaction.
 	 *
 	 * @param message           the parsed mail message
-	 * @param mailboxOwnerEmail the email address of the mailbox the event belongs to (may be {@code null})
+	 * @param mailboxOwnerEmail compatibility mailbox label; never used to establish ownership
 	 * @param direction         whether the message was received or sent
 	 * @param enterpriseName    the enterprise the message belongs to
 	 * @return a Uni emitting the created mail event's id
 	 */
 	Uni<UUID> ingest(MailMessage message, String mailboxOwnerEmail, MailDirection direction, String enterpriseName);
+
+    /** Trusted host/job entry point; identity must come from current authenticated server context. */
+    default Uni<UUID> ingest(MailMessage message, String mailboxOwnerEmail, MailDirection direction,
+                             String enterpriseName, com.guicedee.activitymaster.mail.MailIdentity identity) {
+        return Uni.createFrom().failure(new UnsupportedOperationException("Verified mail ingestion unavailable"));
+    }
 }
 

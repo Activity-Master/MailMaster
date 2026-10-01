@@ -40,9 +40,14 @@ public class MailMasterInstall implements ISystemUpdate
 	public Uni<Boolean> update(Mutiny.StatelessSession session, IEnterprise<?, ?> enterprise)
 	{
 		log.info("Installing Mail Master taxonomy for enterprise {} (stateless)", enterprise.getName());
-		return IActivityMasterService.getISystem(session, MailSystemName, enterprise)
-				.chain(system -> IActivityMasterService.getISystemToken(session, MailSystemName, enterprise)
-						.chain(token -> createTaxonomy(session, system, token)))
+        com.guicedee.activitymaster.fsdm.client.services.ISystemsService<?> systems =
+                get(com.guicedee.activitymaster.fsdm.client.services.ISystemsService.class);
+        return systems.getActivityMaster(session, enterprise)
+                .chain(core -> systems.getSecurityIdentityToken(session, core)
+                        .chain(token -> get(com.guicedee.activitymaster.fsdm.plugins.PluginService.class)
+                                .registerBuiltIn(session, core, token, get(com.guicedee.activitymaster.mail.MailSystem.class))
+                                .chain(() -> IActivityMasterService.getISystem(session, MailSystemName, enterprise))
+                                .chain(system -> createTaxonomy(session, system, token))))
 				.onFailure().invoke(error -> log.error("Mail Master installation failed (stateless): {}", error.getMessage(), error))
 				.replaceWith(Boolean.TRUE);
 	}
